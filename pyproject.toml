@@ -1,0 +1,25 @@
+[project]
+name = "calculator-api"
+version = "0.1.0"
+description = "A simple calculator REST API"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "sqlmodel>=0.0.22",
+]
+
+[project.scripts]
+calculator-api = "server:main"
+
+[tool.setuptools]
+py-modules = ["server", "core"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
