@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import AsyncGenerator
 
+import os
+
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
@@ -173,7 +175,8 @@ def delete_calculation(calculation_id: int, session: Session = Depends(get_sessi
 
 def main() -> None:
     """Run the server."""
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 
 if __name__ == "__main__":
