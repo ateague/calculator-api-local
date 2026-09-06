@@ -8,8 +8,8 @@ from fastapi import FastAPI
 
 from calculator_api.config import get_settings
 from calculator_api.database import init_db
-from calculator_api.routes.calculator import router as calculator_router
 from calculator_api.routes.calculations import router as calculations_router
+from calculator_api.routes.calculator import router as calculator_router
 
 
 @asynccontextmanager

@@ -4,7 +4,6 @@ import pytest
 
 from calculator_api.core import add, divide, multiply, subtract
 
-
 # --- add ---
 
 

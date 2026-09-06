@@ -2,9 +2,7 @@
 
 
 def test_create_calculation(client):
-    response = client.post(
-        "/calculations", json={"operation": "add", "a": 2, "b": 3}
-    )
+    response = client.post("/calculations", json={"operation": "add", "a": 2, "b": 3})
     assert response.status_code == 201
     data = response.json()
     assert data["result"] == 5.0
@@ -16,16 +14,12 @@ def test_create_calculation(client):
 
 
 def test_create_calculation_invalid_operation(client):
-    response = client.post(
-        "/calculations", json={"operation": "invalid", "a": 2, "b": 3}
-    )
+    response = client.post("/calculations", json={"operation": "invalid", "a": 2, "b": 3})
     assert response.status_code == 400
 
 
 def test_create_calculation_divide_by_zero(client):
-    response = client.post(
-        "/calculations", json={"operation": "div", "a": 1, "b": 0}
-    )
+    response = client.post("/calculations", json={"operation": "div", "a": 1, "b": 0})
     assert response.status_code == 400
 
 
@@ -40,9 +34,7 @@ def test_list_calculations(client):
 
 
 def test_get_calculation(client):
-    create_resp = client.post(
-        "/calculations", json={"operation": "mul", "a": 3, "b": 4}
-    )
+    create_resp = client.post("/calculations", json={"operation": "mul", "a": 3, "b": 4})
     calc_id = create_resp.json()["id"]
 
     response = client.get(f"/calculations/{calc_id}")
@@ -59,9 +51,7 @@ def test_get_calculation_not_found(client):
 
 
 def test_delete_calculation(client):
-    create_resp = client.post(
-        "/calculations", json={"operation": "add", "a": 10, "b": 20}
-    )
+    create_resp = client.post("/calculations", json={"operation": "add", "a": 10, "b": 20})
     calc_id = create_resp.json()["id"]
 
     delete_resp = client.delete(f"/calculations/{calc_id}")
