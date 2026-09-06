@@ -4,7 +4,11 @@ from fastapi.testclient import TestClient
 
 
 def test_create_calculation_persists_record(client: TestClient) -> None:
-    """POST /calculations creates and returns a persisted record with the computed result."""
+    """POST /calculations creates and returns a persisted record with the computed result.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     response = client.post(
         "/calculations",
         json={"operation": "add", "a": 2, "b": 3},
@@ -20,7 +24,11 @@ def test_create_calculation_persists_record(client: TestClient) -> None:
 
 
 def test_create_calculation_unknown_operation_returns_400(client: TestClient) -> None:
-    """POST /calculations returns HTTP 400 when the operation is not recognized."""
+    """POST /calculations returns HTTP 400 when the operation is not recognized.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     response = client.post(
         "/calculations",
         json={"operation": "modulo", "a": 10, "b": 3},
@@ -30,7 +38,11 @@ def test_create_calculation_unknown_operation_returns_400(client: TestClient) ->
 
 
 def test_create_calculation_divide_by_zero_returns_400(client: TestClient) -> None:
-    """POST /calculations returns HTTP 400 when a stored divide by zero is attempted."""
+    """POST /calculations returns HTTP 400 when a stored divide by zero is attempted.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     response = client.post(
         "/calculations",
         json={"operation": "div", "a": 5, "b": 0},
@@ -39,7 +51,11 @@ def test_create_calculation_divide_by_zero_returns_400(client: TestClient) -> No
 
 
 def test_list_calculations_returns_all_records(client: TestClient) -> None:
-    """GET /calculations returns every persisted record."""
+    """GET /calculations returns every persisted record.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     client.post("/calculations", json={"operation": "add", "a": 1, "b": 1})
     client.post("/calculations", json={"operation": "mul", "a": 3, "b": 4})
 
@@ -52,7 +68,11 @@ def test_list_calculations_returns_all_records(client: TestClient) -> None:
 
 
 def test_get_calculation_by_id_returns_record(client: TestClient) -> None:
-    """GET /calculations/{id} returns the matching stored calculation."""
+    """GET /calculations/{id} returns the matching stored calculation.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     created = client.post(
         "/calculations",
         json={"operation": "sub", "a": 10, "b": 4},
@@ -65,13 +85,21 @@ def test_get_calculation_by_id_returns_record(client: TestClient) -> None:
 
 
 def test_get_calculation_missing_id_returns_404(client: TestClient) -> None:
-    """GET /calculations/{id} returns HTTP 404 for an unknown ID."""
+    """GET /calculations/{id} returns HTTP 404 for an unknown ID.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     response = client.get("/calculations/9999")
     assert response.status_code == 404
 
 
 def test_delete_calculation_removes_record(client: TestClient) -> None:
-    """DELETE /calculations/{id} removes the record and subsequent GET returns 404."""
+    """DELETE /calculations/{id} removes the record and subsequent GET returns 404.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     created = client.post(
         "/calculations",
         json={"operation": "add", "a": 5, "b": 5},
@@ -85,6 +113,10 @@ def test_delete_calculation_removes_record(client: TestClient) -> None:
 
 
 def test_delete_calculation_missing_id_returns_404(client: TestClient) -> None:
-    """DELETE /calculations/{id} returns HTTP 404 for an unknown ID."""
+    """DELETE /calculations/{id} returns HTTP 404 for an unknown ID.
+
+    Args:
+        client: A ``TestClient`` wired to an isolated in-memory SQLite database.
+    """
     response = client.delete("/calculations/9999")
     assert response.status_code == 404
