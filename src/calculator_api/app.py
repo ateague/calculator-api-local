@@ -6,23 +6,28 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 
+from calculator_api.config import Settings
 from calculator_api.database import init_engine
 from calculator_api.routes import router
 
 
-def create_app(database_url: str = "sqlite:///calculator.db") -> FastAPI:
+def create_app(settings: Settings | None = None) -> FastAPI:
     """Create and configure the FastAPI application.
 
     Initializes the database engine, registers the lifespan handler that
     creates tables on startup, and includes all API routers.
 
     Args:
-        database_url: SQLAlchemy database connection URL.
+        settings: Application settings used to configure the app. If ``None``,
+            a default ``Settings`` instance is created (loading values from
+            environment variables where available).
 
     Returns:
         A fully configured ``FastAPI`` application instance.
     """
-    init_engine(database_url)
+    if settings is None:
+        settings = Settings()
+    init_engine(settings.database_url)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
