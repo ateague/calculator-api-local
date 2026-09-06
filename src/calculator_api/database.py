@@ -1,6 +1,6 @@
 """Database engine and session management."""
 
-from typing import Generator
+from collections.abc import Generator
 
 from sqlmodel import Session, create_engine
 
