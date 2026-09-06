@@ -6,14 +6,24 @@ requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.32.0",
-    "sqlmodel>=0.0.22",
+    "sqlmodel>=0.0.31",
+    "pydantic-settings>=2.15",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "pyright>=1.1",
 ]
 
 [project.scripts]
-calculator-api = "server:main"
+calculator-api = "calculator_api.app:main"
 
-[tool.setuptools]
-py-modules = ["server", "core"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["calculator_api*"]
 
 [tool.ruff]
 line-length = 100
@@ -23,3 +33,6 @@ select = ["E", "F", "I", "W"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

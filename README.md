@@ -5,13 +5,13 @@ A very simple REST API server that reuses functionality from `calculator-cli`.
 ## Setup
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Run
 
 ```bash
-python server.py
+python -m calculator_api
 ```
 
 Or after installing:
@@ -78,6 +78,20 @@ curl http://localhost:8000/calculations
 
 ```bash
 curl -X DELETE http://localhost:8000/calculations/1
+```
+
+## Testing
+
+```bash
+pytest
+```
+
+## Development
+
+```bash
+ruff check .
+ruff format .
+pyright
 ```
 
 ## API Docs
