@@ -6,7 +6,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 
-from calculator_api.database import engine, init_engine
+from calculator_api.database import init_engine
 from calculator_api.routes import router
 
 
