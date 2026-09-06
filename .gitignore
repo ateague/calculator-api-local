@@ -28,3 +28,7 @@ venv/
 # Linting / Type checking
 .ruff_cache/
 .pyright/
+
+# OS / sandbox artifacts
+NUL
+pip/
