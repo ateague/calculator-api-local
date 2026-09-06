@@ -7,13 +7,20 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.32.0",
     "sqlmodel>=0.0.22",
+    "pydantic-settings>=2.0",
 ]
 
-[project.scripts]
-calculator-api = "server:main"
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
 
-[tool.setuptools]
-py-modules = ["server", "core"]
+[project.scripts]
+calculator-api = "calculator_api.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
