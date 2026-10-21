@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, NaiveDatetime
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from core import add, divide, multiply, subtract
@@ -46,7 +46,7 @@ class Calculation(CalculationBase, table=True):
     """Database model for stored calculations."""
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=_utcnow)
+    created_at: NaiveDatetime = Field(default_factory=_utcnow)
 
 
 class CalculationCreate(BaseModel):
