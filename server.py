@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """A very simple calculator REST API server."""
 
-from contextlib import asynccontextmanager
 import os
 from collections.abc import AsyncGenerator, Generator
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 import uvicorn
