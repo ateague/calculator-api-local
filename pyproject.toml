@@ -9,6 +9,14 @@ dependencies = [
     "sqlmodel>=0.0.22",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "httpx",
+    "ruff",
+]
+
 [project.scripts]
 calculator-api = "server:main"
 
@@ -23,3 +31,8 @@ select = ["E", "F", "I", "W"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--cov=core --cov=server --cov-branch --cov-report=term-missing --cov-fail-under=80"

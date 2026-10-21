@@ -8,6 +8,16 @@ A very simple REST API server that reuses functionality from `calculator-cli`.
 pip install -e .
 ```
 
+## Development & Tests
+
+```bash
+pip install -e ".[dev]"
+pytest            # runs with branch coverage, fails under 80%
+ruff check .
+```
+
+Tests use an in-memory SQLite database; `calculator.db` is never touched. Set `DATABASE_URL` to override the default `sqlite:///calculator.db`.
+
 ## Run
 
 ```bash
