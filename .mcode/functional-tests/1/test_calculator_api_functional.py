@@ -467,7 +467,11 @@ class TestLaunchersAndConfiguration:
             timeout=10,
         )
         assert result.returncode != 0
-        assert "Invalid DATABASE_URL 'not a database url'" in result.stderr
+        assert (
+            "Invalid DATABASE_URL: provide a valid SQLAlchemy database URL"
+            in result.stderr
+        )
+        assert "not a database url" not in result.stderr
         _record_cli(
             "test_invalid_database_url_fails_clearly", result, "calculator-api"
         )
