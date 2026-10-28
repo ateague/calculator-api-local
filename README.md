@@ -201,6 +201,7 @@ python -m pip wheel . --no-deps
 ```
 
 GitHub Actions runs on every pull request and pushes to `main` with Python 3.12. It installs
-`.[test]`, then runs `ruff check .`, `pyright`, and `pytest`; a failed gate fails the job.
+`.[test]`, builds a wheel with `python -m pip wheel . --no-deps`, then runs `ruff check .`,
+`pyright`, and `pytest`; a failed gate fails the job.
 The workflow uploads `coverage.xml` as the `coverage-report` artifact when the report is
 available.
