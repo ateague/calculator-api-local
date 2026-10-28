@@ -184,14 +184,15 @@ pytest
 For focused work, the test layers are:
 
 ```bash
-pytest tests/unit/test_core.py
-pytest tests/integration/test_api.py
-pytest tests/test_main.py
+pytest --no-cov tests/unit/test_core.py
+pytest --no-cov tests/integration/test_api.py
+pytest --no-cov tests/test_main.py
 ```
 
-The shared `pyproject.toml` configuration makes `pytest` measure branch coverage across
+Focused runs disable the project-wide coverage gate because they intentionally execute only one
+layer. The shared `pyproject.toml` configuration makes plain `pytest` measure branch coverage across
 `core.py` and `server.py`, show missing lines in the terminal, write `coverage.xml`, and fail
-below 80% combined coverage. Focused invocations also inherit that configuration.
+below 80% combined coverage.
 
 Build a wheel through the declared setuptools PEP 517 backend with:
 
