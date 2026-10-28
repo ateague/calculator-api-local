@@ -170,10 +170,10 @@ def _create_engine(database_url: str) -> Engine:
         url = make_url(database_url)
         connect_args = {"check_same_thread": False} if url.get_backend_name() == "sqlite" else {}
         return create_engine(url, echo=False, connect_args=connect_args)
-    except (ArgumentError, ModuleNotFoundError, ValueError) as exc:
+    except (ArgumentError, ModuleNotFoundError, ValueError):
         raise ValueError(
-            f"Invalid DATABASE_URL {database_url!r}: provide a valid SQLAlchemy database URL"
-        ) from exc
+            "Invalid DATABASE_URL: provide a valid SQLAlchemy database URL"
+        ) from None
 
 
 def create_app(database_url: str | None = None) -> FastAPI:

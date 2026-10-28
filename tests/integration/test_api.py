@@ -1,8 +1,9 @@
 """Integration tests for calculator, persistence, and generated HTTP contracts."""
 
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
 from fastapi import FastAPI
@@ -369,7 +370,27 @@ def test_factory_rejects_invalid_database_url() -> None:
     with pytest.raises(ValueError) as exc_info:
         create_app("not a valid database url")
 
-    assert str(exc_info.value) == (
-        "Invalid DATABASE_URL 'not a valid database url': "
-        "provide a valid SQLAlchemy database URL"
+    assert str(exc_info.value) == "Invalid DATABASE_URL: provide a valid SQLAlchemy database URL"
+
+
+def test_factory_database_url_error_does_not_expose_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database_url = "postgresql://alice:dummy-password@example.invalid/calculator"
+
+    def fail_to_create_engine(
+        url: object, *, echo: bool, connect_args: dict[str, bool]
+    ) -> NoReturn:
+        raise ModuleNotFoundError(f"Unable to load database driver for {database_url}")
+
+    monkeypatch.setattr(server, "create_engine", fail_to_create_engine)
+
+    with pytest.raises(ValueError) as exc_info:
+        create_app(database_url)
+
+    displayed_exception = "".join(
+        traceback.format_exception(exc_info.type, exc_info.value, exc_info.tb)
     )
+    assert "Invalid DATABASE_URL: provide a valid SQLAlchemy database URL" in displayed_exception
+    assert database_url not in displayed_exception
+    assert "dummy-password" not in displayed_exception
