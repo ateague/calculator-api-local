@@ -206,16 +206,15 @@ app = create_app()
 def main() -> None:
     """Run the server."""
     raw_port = os.environ.get("PORT", "8000")
+    invalid_port_message = (
+        f"Invalid PORT value {raw_port!r}: expected an integer between 1 and 65535"
+    )
     try:
         port = int(raw_port)
     except ValueError as exc:
-        raise ValueError(
-            f"Invalid PORT value {raw_port!r}: expected an integer between 1 and 65535"
-        ) from exc
+        raise ValueError(invalid_port_message) from exc
     if not 1 <= port <= 65535:
-        raise ValueError(
-            f"Invalid PORT value {raw_port!r}: expected an integer between 1 and 65535"
-        )
+        raise ValueError(invalid_port_message)
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 
