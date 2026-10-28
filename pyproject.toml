@@ -1,12 +1,27 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "calculator-api"
 version = "0.1.0"
 description = "A simple calculator REST API"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn>=0.32.0",
-    "sqlmodel>=0.0.22",
+    "fastapi==0.162.0",
+    "pydantic==2.14.1",
+    "uvicorn==0.54.0",
+    "sqlmodel==0.0.48",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "coverage==7.17.0",
+    "httpx==0.28.1",
+    "ruff==0.17.2",
+    "pyright==1.1.414",
 ]
 
 [project.scripts]
@@ -14,6 +29,17 @@ calculator-api = "server:main"
 
 [tool.setuptools]
 py-modules = ["server", "core"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=core",
+    "--cov=server",
+    "--cov-branch",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=80",
+]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
