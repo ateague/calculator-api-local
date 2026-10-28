@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NoReturn
+from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
@@ -273,14 +274,18 @@ def test_noninteger_calculation_id_returns_422(client: TestClient, method: str) 
 
 
 def test_lifespan_creates_calculation_table(
-    app: FastAPI, database_path: Path
+    app: FastAPI, database_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     assert not database_path.exists()
+    dispose_mock = Mock(wraps=app.state.engine.dispose)
+    monkeypatch.setattr(app.state.engine, "dispose", dispose_mock)
 
     with TestClient(app) as lifespan_client:
         assert lifespan_client.get("/calculations").status_code == 200
         assert database_path.is_file()
         assert "calculation" in inspect(app.state.engine).get_table_names()
+
+    dispose_mock.assert_called_once_with()
 
 
 def test_each_request_uses_and_closes_an_independent_session(

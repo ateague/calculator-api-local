@@ -187,9 +187,12 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(active_app: FastAPI) -> AsyncIterator[None]:
-        """Create database tables for this application on startup."""
-        SQLModel.metadata.create_all(active_app.state.engine)
-        yield
+        """Create database tables on startup and release the engine on shutdown."""
+        try:
+            SQLModel.metadata.create_all(active_app.state.engine)
+            yield
+        finally:
+            active_app.state.engine.dispose()
 
     application = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
     application.state.engine = engine
