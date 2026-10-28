@@ -1,6 +1,6 @@
 """Integration tests for calculator, persistence, and generated HTTP contracts."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -150,21 +150,21 @@ def test_list_calculations_is_deterministically_newest_first(
             a=1.0,
             b=1.0,
             result=2.0,
-            created_at=datetime(2024, 1, 1, 8, 0, 0),
+            created_at=datetime(2024, 1, 1, 8, 0, 0, tzinfo=timezone.utc),
         ),
         Calculation(
             operation="sub",
             a=5.0,
             b=2.0,
             result=3.0,
-            created_at=datetime(2024, 3, 1, 8, 0, 0),
+            created_at=datetime(2024, 3, 1, 8, 0, 0, tzinfo=timezone.utc),
         ),
         Calculation(
             operation="mul",
             a=2.0,
             b=3.0,
             result=6.0,
-            created_at=datetime(2024, 2, 1, 8, 0, 0),
+            created_at=datetime(2024, 2, 1, 8, 0, 0, tzinfo=timezone.utc),
         ),
     ]
     with Session(app.state.engine) as session:

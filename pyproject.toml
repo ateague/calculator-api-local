@@ -49,3 +49,4 @@ select = ["E", "F", "I", "W"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+exclude = ["build", "dist"]

@@ -4,7 +4,7 @@
 import os
 from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TypeAlias
 
 import uvicorn
@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import ArgumentError
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
 from core import add, divide, multiply, subtract
 
@@ -41,7 +41,7 @@ class Calculation(CalculationBase, table=True):
     """Database model for stored calculations."""
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CalculationCreate(BaseModel):
@@ -141,7 +141,8 @@ def create_calculation(
 @router.get("/calculations", response_model=list[CalculationResponse])
 def list_calculations(session: Session = Depends(get_session)) -> list[Calculation]:
     """List all stored calculations."""
-    return list(session.exec(select(Calculation).order_by(Calculation.created_at.desc())).all())
+    statement = select(Calculation).order_by(col(Calculation.created_at).desc())
+    return list(session.exec(statement).all())
 
 
 @router.get("/calculations/{calculation_id}", response_model=CalculationResponse)
