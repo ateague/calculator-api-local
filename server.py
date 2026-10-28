@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 """A very simple calculator REST API server."""
 
+import os
+from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import AsyncGenerator
-
-import os
+from typing import TypeAlias
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy.engine import Engine, make_url
+from sqlalchemy.exc import ArgumentError
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from core import add, divide, multiply, subtract
 
-# --- Database Setup ---
-
-DATABASE_URL = "sqlite:///calculator.db"
-engine = create_engine(DATABASE_URL, echo=False)
+DEFAULT_DATABASE_URL = "sqlite:///calculator.db"
 
 
-def get_session() -> Session:  # type: ignore[misc]
-    """Yield a database session."""
-    with Session(engine) as session:
+def get_session(request: Request) -> Generator[Session, None, None]:
+    """Yield a database session owned by the active application."""
+    with Session(request.app.state.engine) as session:
         yield session
 
 
@@ -73,48 +72,39 @@ class ResultResponse(BaseModel):
     result: float
 
 
-# --- App Setup ---
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Create database tables on startup."""
-    SQLModel.metadata.create_all(engine)
-    yield
-
-
-app = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
-
-OPERATIONS: dict[str, callable] = {  # type: ignore[type-arg]
+Operation: TypeAlias = Callable[[float, float], float]
+OPERATIONS: dict[str, Operation] = {
     "add": add,
     "sub": subtract,
     "mul": multiply,
     "div": divide,
 }
 
+router = APIRouter()
+
 
 # --- Calculator Endpoints ---
 
 
-@app.post("/add", response_model=ResultResponse)
+@router.post("/add", response_model=ResultResponse)
 def api_add(req: CalculationRequest) -> ResultResponse:
     """Add two numbers."""
     return ResultResponse(result=add(req.a, req.b))
 
 
-@app.post("/subtract", response_model=ResultResponse)
+@router.post("/subtract", response_model=ResultResponse)
 def api_subtract(req: CalculationRequest) -> ResultResponse:
     """Subtract b from a."""
     return ResultResponse(result=subtract(req.a, req.b))
 
 
-@app.post("/multiply", response_model=ResultResponse)
+@router.post("/multiply", response_model=ResultResponse)
 def api_multiply(req: CalculationRequest) -> ResultResponse:
     """Multiply two numbers."""
     return ResultResponse(result=multiply(req.a, req.b))
 
 
-@app.post("/divide", response_model=ResultResponse)
+@router.post("/divide", response_model=ResultResponse)
 def api_divide(req: CalculationRequest) -> ResultResponse:
     """Divide a by b."""
     try:
@@ -126,7 +116,7 @@ def api_divide(req: CalculationRequest) -> ResultResponse:
 # --- CRUD Endpoints for Calculations ---
 
 
-@app.post("/calculations", response_model=CalculationResponse, status_code=201)
+@router.post("/calculations", response_model=CalculationResponse, status_code=201)
 def create_calculation(
     req: CalculationCreate, session: Session = Depends(get_session)
 ) -> Calculation:
@@ -148,13 +138,13 @@ def create_calculation(
     return calculation
 
 
-@app.get("/calculations", response_model=list[CalculationResponse])
+@router.get("/calculations", response_model=list[CalculationResponse])
 def list_calculations(session: Session = Depends(get_session)) -> list[Calculation]:
     """List all stored calculations."""
     return list(session.exec(select(Calculation).order_by(Calculation.created_at.desc())).all())
 
 
-@app.get("/calculations/{calculation_id}", response_model=CalculationResponse)
+@router.get("/calculations/{calculation_id}", response_model=CalculationResponse)
 def get_calculation(calculation_id: int, session: Session = Depends(get_session)) -> Calculation:
     """Get a specific calculation by ID."""
     calculation = session.get(Calculation, calculation_id)
@@ -163,7 +153,7 @@ def get_calculation(calculation_id: int, session: Session = Depends(get_session)
     return calculation
 
 
-@app.delete("/calculations/{calculation_id}", status_code=204)
+@router.delete("/calculations/{calculation_id}", status_code=204)
 def delete_calculation(calculation_id: int, session: Session = Depends(get_session)) -> None:
     """Delete a calculation by ID."""
     calculation = session.get(Calculation, calculation_id)
@@ -173,9 +163,55 @@ def delete_calculation(calculation_id: int, session: Session = Depends(get_sessi
     session.commit()
 
 
+def _create_engine(database_url: str) -> Engine:
+    """Create an engine from a validated database URL."""
+    try:
+        url = make_url(database_url)
+        connect_args = {"check_same_thread": False} if url.get_backend_name() == "sqlite" else {}
+        return create_engine(url, echo=False, connect_args=connect_args)
+    except (ArgumentError, ModuleNotFoundError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid DATABASE_URL {database_url!r}: provide a valid SQLAlchemy database URL"
+        ) from exc
+
+
+def create_app(database_url: str | None = None) -> FastAPI:
+    """Create an independently configured calculator application."""
+    resolved_database_url = (
+        database_url
+        if database_url is not None
+        else os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    )
+    engine = _create_engine(resolved_database_url)
+
+    @asynccontextmanager
+    async def lifespan(active_app: FastAPI) -> AsyncIterator[None]:
+        """Create database tables for this application on startup."""
+        SQLModel.metadata.create_all(active_app.state.engine)
+        yield
+
+    application = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
+    application.state.engine = engine
+    application.include_router(router)
+    return application
+
+
+app = create_app()
+
+
 def main() -> None:
     """Run the server."""
-    port = int(os.environ.get("PORT", "8000"))
+    raw_port = os.environ.get("PORT", "8000")
+    try:
+        port = int(raw_port)
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid PORT value {raw_port!r}: expected an integer between 1 and 65535"
+        ) from exc
+    if not 1 <= port <= 65535:
+        raise ValueError(
+            f"Invalid PORT value {raw_port!r}: expected an integer between 1 and 65535"
+        )
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 
