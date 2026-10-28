@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { applicationOrigin } from "./application-origin";
 
 export default defineConfig({
   testDir: ".",
@@ -6,7 +7,7 @@ export default defineConfig({
   retries: 1,
   workers: 1,
   use: {
-    baseURL: "http://127.0.0.1:18080",
+    baseURL: applicationOrigin,
     headless: true,
     screenshot: "on",
     video: "retain-on-failure",

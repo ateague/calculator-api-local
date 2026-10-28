@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-
-const applicationOrigin = "http://127.0.0.1:18080";
+import { applicationOrigin } from "./application-origin";
 
 async function openSwaggerOperation(
   page: Page,
