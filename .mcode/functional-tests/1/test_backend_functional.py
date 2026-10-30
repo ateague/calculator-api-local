@@ -135,7 +135,10 @@ def assert_created_calculation(
     assert body["b"] == b
     assert body["result"] == expected
     assert isinstance(body["id"], int) and body["id"] > 0
-    assert datetime.fromisoformat(body["created_at"].replace("Z", "+00:00")).tzinfo
+    created_at = body["created_at"]
+    parsed_created_at = datetime.fromisoformat(created_at)
+    assert parsed_created_at.tzinfo is None
+    assert not created_at.endswith("Z")
 
     persisted = requests.get(f"{BASE_URL}/calculations/{body['id']}", timeout=5)
     assert persisted.status_code == 200
@@ -292,6 +295,39 @@ def test_delete_calculation_noninteger(empty_store: None) -> None:
     assert isinstance(response.json()["detail"], list)
 
 
+def test_generated_docs_describe_and_drive_add_route() -> None:
+    schema = requests.get(f"{BASE_URL}/openapi.json", timeout=5)
+    docs = requests.get(f"{BASE_URL}/docs", timeout=5)
+    redoc = requests.get(f"{BASE_URL}/redoc", timeout=5)
+    oauth_redirect = requests.get(f"{BASE_URL}/docs/oauth2-redirect", timeout=5)
+
+    assert schema.status_code == 200
+    assert "post" in schema.json()["paths"]["/add"]
+    assert docs.status_code == 200 and "Swagger UI" in docs.text
+    assert redoc.status_code == 200 and "ReDoc" in redoc.text
+    assert oauth_redirect.status_code == 200
+    assert "OAuth2 Redirect" in oauth_redirect.text
+
+    response = requests.post(
+        f"{BASE_URL}/add", json={"a": 13.5, "b": -3.5}, timeout=5
+    )
+    evidence(
+        "test_generated_docs_describe_and_drive_add_route",
+        json.dumps(
+            {
+                "openapi": schema.status_code,
+                "docs": docs.status_code,
+                "redoc": redoc.status_code,
+                "oauth_redirect": oauth_redirect.status_code,
+                "calculation": response.text,
+            }
+        ),
+        response.status_code,
+    )
+    assert response.status_code == 200
+    assert response.json() == {"result": 10.0}
+
+
 @contextmanager
 def running_entrypoint(
     command: list[str], cwd: Path, env: dict[str, str], port: int, payload: dict[str, float]
@@ -370,6 +406,57 @@ def test_script_entry_honors_port_and_database_environment(tmp_path: Path) -> No
         assert response.json() == {"result": 17.0}
     assert (tmp_path / "script-environment.sqlite3").is_file()
     assert not (tmp_path / "calculator.db").exists()
+
+
+def test_parallel_database_configuration_isolates_persistence(
+    empty_store: None, tmp_path: Path
+) -> None:
+    managed = requests.post(
+        f"{BASE_URL}/calculations",
+        json={"operation": "add", "a": 20.0, "b": 1.0},
+        timeout=5,
+    )
+    assert managed.status_code == 201
+
+    env = os.environ.copy()
+    env["PORT"] = "8182"
+    env["DATABASE_URL"] = "sqlite:///isolated-process.sqlite3"
+    with running_entrypoint(
+        [str(PYTHON), str(REPOSITORY_ROOT / "server.py")],
+        tmp_path,
+        env,
+        8182,
+        {"a": 2.0, "b": 3.0},
+    ):
+        isolated_before = requests.get(
+            "http://127.0.0.1:8182/calculations", timeout=5
+        )
+        isolated_created = requests.post(
+            "http://127.0.0.1:8182/calculations",
+            json={"operation": "mul", "a": 6.0, "b": 7.0},
+            timeout=5,
+        )
+
+    managed_after = requests.get(f"{BASE_URL}/calculations", timeout=5)
+    output = json.dumps(
+        {
+            "isolated_before": isolated_before.json(),
+            "isolated_created": isolated_created.json(),
+            "managed_after": managed_after.json(),
+        }
+    )
+    evidence(
+        "test_parallel_database_configuration_isolates_persistence",
+        output,
+        isolated_created.status_code,
+    )
+    assert isolated_before.status_code == 200
+    assert isolated_before.json() == []
+    assert isolated_created.status_code == 201
+    assert isolated_created.json()["result"] == 42.0
+    assert managed_after.status_code == 200
+    assert [item["id"] for item in managed_after.json()] == [managed.json()["id"]]
+    assert (tmp_path / "isolated-process.sqlite3").is_file()
 
 
 def test_console_entry_rejects_invalid_port(tmp_path: Path) -> None:
