@@ -4,11 +4,12 @@
 import os
 from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import datetime
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy import DateTime
 from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
@@ -51,7 +52,10 @@ class Calculation(CalculationBase, table=True):
     """Database model for stored calculations."""
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        sa_type=DateTime(timezone=False),
+    )
 
 
 class CalculationCreate(BaseModel):

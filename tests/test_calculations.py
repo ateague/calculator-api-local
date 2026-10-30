@@ -1,6 +1,6 @@
 """HTTP and real-SQLModel behavior tests for persisted calculations."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,7 +29,15 @@ def assert_complete_calculation(
     assert isinstance(body["id"], int)
     created_at = body["created_at"]
     assert isinstance(created_at, str)
-    datetime.fromisoformat(created_at)
+    parsed_created_at = datetime.fromisoformat(created_at)
+    assert parsed_created_at.tzinfo is None
+    assert not created_at.endswith("Z")
+
+
+def test_calculation_created_at_default_is_naive() -> None:
+    calculation = Calculation(operation="add", a=1.0, b=2.0, result=3.0)
+
+    assert calculation.created_at.tzinfo is None
 
 
 @pytest.mark.parametrize(
@@ -124,7 +132,7 @@ def test_list_calculations_orders_newest_first_deterministically(
         ).json()
         for value in (1.0, 2.0, 3.0)
     ]
-    base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    base_time = datetime(2024, 1, 1, 12, 0, 0)
 
     with Session(database_engine) as session:
         for index, body in enumerate(created):
