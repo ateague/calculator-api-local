@@ -1,5 +1,28 @@
 import { expect, test } from "@playwright/test";
 
+const apiOperations = [
+  { method: "POST", path: "/add", summary: "Api Add" },
+  { method: "POST", path: "/subtract", summary: "Api Subtract" },
+  { method: "POST", path: "/multiply", summary: "Api Multiply" },
+  { method: "POST", path: "/divide", summary: "Api Divide" },
+  { method: "GET", path: "/calculations", summary: "List Calculations" },
+  { method: "POST", path: "/calculations", summary: "Create Calculation" },
+  {
+    method: "GET",
+    path: "/calculations/{calculation_id}",
+    summary: "Get Calculation",
+  },
+  {
+    method: "DELETE",
+    path: "/calculations/{calculation_id}",
+    summary: "Delete Calculation",
+  },
+] as const;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 test.describe("Calculator API generated browser surfaces", () => {
   test("Swagger renders API identity, operations, and schemas", async ({ page }) => {
     await page.goto("/docs");
@@ -16,16 +39,12 @@ test.describe("Calculator API generated browser surfaces", () => {
     );
 
     const operations = page.locator(".opblock-summary");
-    const expectedOperations = [
-      /^\s*POST\s*\/add\s*Api Add\s*$/,
-      /^\s*POST\s*\/subtract\s*Api Subtract\s*$/,
-      /^\s*POST\s*\/multiply\s*Api Multiply\s*$/,
-      /^\s*POST\s*\/divide\s*Api Divide\s*$/,
-      /^\s*GET\s*\/calculations\s*List Calculations\s*$/,
-      /^\s*POST\s*\/calculations\s*Create Calculation\s*$/,
-      /^\s*GET\s*\/calculations\/\{calculation_id\}\s*Get Calculation\s*$/,
-      /^\s*DELETE\s*\/calculations\/\{calculation_id\}\s*Delete Calculation\s*$/,
-    ];
+    const expectedOperations = apiOperations.map(
+      ({ method, path, summary }) =>
+        new RegExp(
+          `^\\s*${escapeRegExp(method)}\\s*${escapeRegExp(path)}\\s*${escapeRegExp(summary)}\\s*$`,
+        ),
+    );
     await expect(operations).toHaveCount(expectedOperations.length);
     await expect(operations).toHaveText(expectedOperations);
     for (let index = 0; index < expectedOperations.length; index += 1) {
@@ -93,29 +112,15 @@ test.describe("Calculator API generated browser surfaces", () => {
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Download" })).toBeVisible();
 
-    for (const operation of [
-      "Api Add",
-      "Api Subtract",
-      "Api Multiply",
-      "Api Divide",
-      "List Calculations",
-      "Create Calculation",
-      "Get Calculation",
-      "Delete Calculation",
-    ]) {
-      await expect(page.getByRole("menuitem", { name: operation })).toBeVisible();
+    for (const { summary } of apiOperations) {
+      await expect(page.getByRole("menuitem", { name: summary })).toBeVisible();
     }
 
-    for (const operationButton of [
-      /^post\s*\/add$/i,
-      /^post\s*\/subtract$/i,
-      /^post\s*\/multiply$/i,
-      /^post\s*\/divide$/i,
-      /^get\s*\/calculations$/i,
-      /^post\s*\/calculations$/i,
-      /^get\s*\/calculations\/\{calculation_id\}$/i,
-      /^delete\s*\/calculations\/\{calculation_id\}$/i,
-    ]) {
+    for (const { method, path } of apiOperations) {
+      const operationButton = new RegExp(
+        `^${escapeRegExp(method)}\\s*${escapeRegExp(path)}$`,
+        "i",
+      );
       await expect(
         page.getByRole("button", { name: operationButton }),
       ).toBeAttached();
@@ -139,12 +144,7 @@ test.describe("Calculator API generated browser surfaces", () => {
     });
     expect(Object.keys(document.paths)).toEqual(
       expect.arrayContaining([
-        "/add",
-        "/subtract",
-        "/multiply",
-        "/divide",
-        "/calculations",
-        "/calculations/{calculation_id}",
+        ...new Set(apiOperations.map(({ path }) => path)),
       ]),
     );
     expect(Object.keys(document.components.schemas)).toEqual(
