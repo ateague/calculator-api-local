@@ -27,3 +27,4 @@ dist/
 
 # Local runtime database
 calculator.db
+functional-runtime.db
