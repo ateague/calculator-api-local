@@ -211,7 +211,6 @@ def create_app(engine: Engine | None = None, settings: Settings | None = None) -
     )
     application = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
     application.state.engine = app_engine
-    application.state.settings = app_settings
     application.include_router(router)
     return application
 
