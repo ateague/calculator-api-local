@@ -1,0 +1,74 @@
+{
+  "test_add_success": {
+    "actual_status": 200,
+    "actual_output": "{\"result\":5.0}"
+  },
+  "test_subtract_success": {
+    "actual_status": 200,
+    "actual_output": "{\"result\":-1.0}"
+  },
+  "test_multiply_success": {
+    "actual_status": 200,
+    "actual_output": "{\"result\":-6.0}"
+  },
+  "test_divide_success": {
+    "actual_status": 200,
+    "actual_output": "{\"result\":3.0}"
+  },
+  "test_malformed_json_validation": {
+    "actual_status": 422,
+    "actual_output": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}\n{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}\n{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}\n{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}"
+  },
+  "test_missing_operand_validation": {
+    "actual_status": 422,
+    "actual_output": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"b\"],\"msg\":\"Field required\",\"input\":{\"a\":1}}]}\n{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"b\"],\"msg\":\"Field required\",\"input\":{\"a\":1}}]}\n{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"b\"],\"msg\":\"Field required\",\"input\":{\"a\":1}}]}\n{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"b\"],\"msg\":\"Field required\",\"input\":{\"a\":1}}]}"
+  },
+  "test_nonnumeric_operand_validation": {
+    "actual_status": 422,
+    "actual_output": "{\"detail\":[{\"type\":\"float_parsing\",\"loc\":[\"body\",\"a\"],\"msg\":\"Input should be a valid number, unable to parse string as a number\",\"input\":\"bad\"}]}\n{\"detail\":[{\"type\":\"float_parsing\",\"loc\":[\"body\",\"a\"],\"msg\":\"Input should be a valid number, unable to parse string as a number\",\"input\":\"bad\"}]}\n{\"detail\":[{\"type\":\"float_parsing\",\"loc\":[\"body\",\"a\"],\"msg\":\"Input should be a valid number, unable to parse string as a number\",\"input\":\"bad\"}]}\n{\"detail\":[{\"type\":\"float_parsing\",\"loc\":[\"body\",\"a\"],\"msg\":\"Input should be a valid number, unable to parse string as a number\",\"input\":\"bad\"}]}"
+  },
+  "test_divide_by_zero_exact_error": {
+    "actual_status": 400,
+    "actual_output": "{\"detail\":\"Cannot divide by zero\"}"
+  },
+  "test_all_operation_tokens_persist_and_retrieve": {
+    "actual_status": 200,
+    "actual_output": "{\"operation\":\"add\",\"a\":2.0,\"b\":3.0,\"result\":5.0,\"id\":1,\"created_at\":\"2026-10-30T16:57:11.003234Z\"}\n{\"operation\":\"sub\",\"a\":2.0,\"b\":3.0,\"result\":-1.0,\"id\":2,\"created_at\":\"2026-10-30T16:57:11.033847Z\"}\n{\"operation\":\"mul\",\"a\":-2.0,\"b\":3.0,\"result\":-6.0,\"id\":3,\"created_at\":\"2026-10-30T16:57:11.056303Z\"}\n{\"operation\":\"div\",\"a\":7.5,\"b\":2.5,\"result\":3.0,\"id\":4,\"created_at\":\"2026-10-30T16:57:11.079200Z\"}"
+  },
+  "test_history_is_newest_first": {
+    "actual_status": 200,
+    "actual_output": "[{\"operation\":\"add\",\"a\":30.0,\"b\":1.0,\"result\":31.0,\"id\":3,\"created_at\":\"2026-10-30T16:57:11.198685Z\"},{\"operation\":\"add\",\"a\":20.0,\"b\":1.0,\"result\":21.0,\"id\":2,\"created_at\":\"2026-10-30T16:57:11.185270Z\"},{\"operation\":\"add\",\"a\":10.0,\"b\":1.0,\"result\":11.0,\"id\":1,\"created_at\":\"2026-10-30T16:57:11.172573Z\"}]"
+  },
+  "test_unknown_operation_fails_without_persisting": {
+    "actual_status": 400,
+    "actual_output": "{\"detail\":\"Unknown operation: power. Use: ['add', 'sub', 'mul', 'div']\"}"
+  },
+  "test_persisted_divide_by_zero_fails_without_persisting": {
+    "actual_status": 400,
+    "actual_output": "{\"detail\":\"Cannot divide by zero\"}"
+  },
+  "test_missing_required_calculation_field": {
+    "actual_status": 422,
+    "actual_output": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"b\"],\"msg\":\"Field required\",\"input\":{\"operation\":\"add\",\"a\":2}}]}"
+  },
+  "test_get_missing_calculation": {
+    "actual_status": 404,
+    "actual_output": "{\"detail\":\"Calculation not found\"}"
+  },
+  "test_delete_is_bodyless_and_durable": {
+    "actual_status": 204,
+    "actual_output": ""
+  },
+  "test_delete_missing_calculation": {
+    "actual_status": 404,
+    "actual_output": "{\"detail\":\"Calculation not found\"}"
+  },
+  "test_direct_script_uses_default_port_and_database": {
+    "actual_exit_code": 0,
+    "actual_output": "INFO:     127.0.0.1:52704 - \"POST /calculations HTTP/1.1\" 201 Created\nINFO:     Started server process [20157]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:     Application shutdown complete.\nINFO:     Finished server process [20157]\n"
+  },
+  "test_console_launcher_uses_overridden_port_and_database": {
+    "actual_exit_code": 0,
+    "actual_output": "INFO:     127.0.0.1:41764 - \"POST /calculations HTTP/1.1\" 201 Created\nINFO:     Started server process [20159]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://0.0.0.0:35523 (Press CTRL+C to quit)\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:     Application shutdown complete.\nINFO:     Finished server process [20159]\n"
+  }
+}
