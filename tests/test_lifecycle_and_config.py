@@ -15,7 +15,6 @@ from starlette.requests import Request
 import server
 from server import Calculation
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -112,7 +111,7 @@ def test_create_app_binds_selected_engine(database_engine: Engine) -> None:
     assert selected_app.state.engine is database_engine
     assert selected_app.title == "Calculator API"
     assert selected_app.version == "0.1.0"
-    assert {route.path for route in selected_app.routes}.issuperset(
+    assert set(selected_app.openapi()["paths"]).issuperset(
         {"/add", "/subtract", "/multiply", "/divide", "/calculations"}
     )
 

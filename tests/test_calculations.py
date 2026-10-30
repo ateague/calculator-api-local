@@ -1,6 +1,6 @@
 """HTTP and real-SQLModel behavior tests for persisted calculations."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,7 +8,6 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session
 
 from server import Calculation
-
 
 RESPONSE_FIELDS = {"operation", "a", "b", "result", "id", "created_at"}
 
@@ -125,7 +124,7 @@ def test_list_calculations_orders_newest_first_deterministically(
         ).json()
         for value in (1.0, 2.0, 3.0)
     ]
-    base_time = datetime(2024, 1, 1, 12, 0, 0)
+    base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
     with Session(database_engine) as session:
         for index, body in enumerate(created):

@@ -38,6 +38,8 @@ select = ["E", "F", "I", "W"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
 
 [tool.pytest.ini_options]
 addopts = [
