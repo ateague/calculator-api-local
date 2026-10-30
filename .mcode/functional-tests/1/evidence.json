@@ -33,11 +33,11 @@
   },
   "test_all_operation_tokens_persist_and_retrieve": {
     "actual_status": 200,
-    "actual_output": "{\"operation\":\"add\",\"a\":2.0,\"b\":3.0,\"result\":5.0,\"id\":1,\"created_at\":\"2026-10-30T16:57:11.003234Z\"}\n{\"operation\":\"sub\",\"a\":2.0,\"b\":3.0,\"result\":-1.0,\"id\":2,\"created_at\":\"2026-10-30T16:57:11.033847Z\"}\n{\"operation\":\"mul\",\"a\":-2.0,\"b\":3.0,\"result\":-6.0,\"id\":3,\"created_at\":\"2026-10-30T16:57:11.056303Z\"}\n{\"operation\":\"div\",\"a\":7.5,\"b\":2.5,\"result\":3.0,\"id\":4,\"created_at\":\"2026-10-30T16:57:11.079200Z\"}"
+    "actual_output": "{\"operation\":\"add\",\"a\":2.0,\"b\":3.0,\"result\":5.0,\"id\":1,\"created_at\":\"2026-10-30T17:53:12.679925\"}\n{\"operation\":\"sub\",\"a\":2.0,\"b\":3.0,\"result\":-1.0,\"id\":2,\"created_at\":\"2026-10-30T17:53:12.702682\"}\n{\"operation\":\"mul\",\"a\":-2.0,\"b\":3.0,\"result\":-6.0,\"id\":3,\"created_at\":\"2026-10-30T17:53:12.721527\"}\n{\"operation\":\"div\",\"a\":7.5,\"b\":2.5,\"result\":3.0,\"id\":4,\"created_at\":\"2026-10-30T17:53:12.739837\"}"
   },
   "test_history_is_newest_first": {
     "actual_status": 200,
-    "actual_output": "[{\"operation\":\"add\",\"a\":30.0,\"b\":1.0,\"result\":31.0,\"id\":3,\"created_at\":\"2026-10-30T16:57:11.198685Z\"},{\"operation\":\"add\",\"a\":20.0,\"b\":1.0,\"result\":21.0,\"id\":2,\"created_at\":\"2026-10-30T16:57:11.185270Z\"},{\"operation\":\"add\",\"a\":10.0,\"b\":1.0,\"result\":11.0,\"id\":1,\"created_at\":\"2026-10-30T16:57:11.172573Z\"}]"
+    "actual_output": "[{\"operation\":\"add\",\"a\":30.0,\"b\":1.0,\"result\":31.0,\"id\":3,\"created_at\":\"2026-10-30T17:53:12.848331\"},{\"operation\":\"add\",\"a\":20.0,\"b\":1.0,\"result\":21.0,\"id\":2,\"created_at\":\"2026-10-30T17:53:12.834989\"},{\"operation\":\"add\",\"a\":10.0,\"b\":1.0,\"result\":11.0,\"id\":1,\"created_at\":\"2026-10-30T17:53:12.821590\"}]"
   },
   "test_unknown_operation_fails_without_persisting": {
     "actual_status": 400,
@@ -65,10 +65,10 @@
   },
   "test_direct_script_uses_default_port_and_database": {
     "actual_exit_code": 0,
-    "actual_output": "INFO:     127.0.0.1:52704 - \"POST /calculations HTTP/1.1\" 201 Created\nINFO:     Started server process [20157]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:     Application shutdown complete.\nINFO:     Finished server process [20157]\n"
+    "actual_output": "INFO:     127.0.0.1:54582 - \"POST /calculations HTTP/1.1\" 201 Created\nINFO:     Started server process [40677]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:     Application shutdown complete.\nINFO:     Finished server process [40677]\n"
   },
   "test_console_launcher_uses_overridden_port_and_database": {
     "actual_exit_code": 0,
-    "actual_output": "INFO:     127.0.0.1:41764 - \"POST /calculations HTTP/1.1\" 201 Created\nINFO:     Started server process [20159]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://0.0.0.0:35523 (Press CTRL+C to quit)\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:     Application shutdown complete.\nINFO:     Finished server process [20159]\n"
+    "actual_output": "INFO:     127.0.0.1:35724 - \"POST /calculations HTTP/1.1\" 201 Created\nINFO:     Started server process [40679]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://0.0.0.0:47521 (Press CTRL+C to quit)\nINFO:     Shutting down\nINFO:     Waiting for application shutdown.\nINFO:     Application shutdown complete.\nINFO:     Finished server process [40679]\n"
   }
 }
