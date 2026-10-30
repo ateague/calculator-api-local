@@ -1,0 +1,30 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python caches and compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Test, lint, and type-check caches
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.pyrightcache/
+
+# Coverage reports
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Local runtime database
+calculator.db
+functional-runtime.db
