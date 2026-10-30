@@ -1,28 +1,55 @@
 #!/usr/bin/env python3
 """A very simple calculator REST API server."""
 
-from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import AsyncGenerator
-
 import os
+from collections.abc import AsyncIterator, Callable, Iterator
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
+from datetime import datetime
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from core import add, divide, multiply, subtract
 
 # --- Database Setup ---
 
-DATABASE_URL = "sqlite:///calculator.db"
-engine = create_engine(DATABASE_URL, echo=False)
+DEFAULT_DATABASE_URL = "sqlite:///calculator.db"
+DEFAULT_PORT = 8000
 
 
-def get_session() -> Session:  # type: ignore[misc]
+@dataclass(frozen=True)
+class Settings:
+    """Environment-backed application settings."""
+
+    database_url: str = DEFAULT_DATABASE_URL
+    port: int = DEFAULT_PORT
+
+    @classmethod
+    def from_env(cls) -> "Settings":
+        """Load settings from the current process environment."""
+        return cls(
+            database_url=os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL),
+            port=int(os.environ.get("PORT", str(DEFAULT_PORT))),
+        )
+
+
+def load_settings() -> Settings:
+    """Load a fresh immutable settings value."""
+    return Settings.from_env()
+
+
+def create_database_engine(database_url: str) -> Engine:
+    """Create the SQLModel engine used by an application instance."""
+    return create_engine(database_url, echo=False)
+
+
+def get_session(request: Request) -> Iterator[Session]:
     """Yield a database session."""
-    with Session(engine) as session:
+    with Session(request.app.state.engine) as session:
         yield session
 
 
@@ -77,44 +104,44 @@ class ResultResponse(BaseModel):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Create database tables on startup."""
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(app.state.engine)
     yield
 
 
-app = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
-
-OPERATIONS: dict[str, callable] = {  # type: ignore[type-arg]
+OPERATIONS: dict[str, Callable[[float, float], float]] = {
     "add": add,
     "sub": subtract,
     "mul": multiply,
     "div": divide,
 }
 
+router = APIRouter()
+
 
 # --- Calculator Endpoints ---
 
 
-@app.post("/add", response_model=ResultResponse)
+@router.post("/add", response_model=ResultResponse)
 def api_add(req: CalculationRequest) -> ResultResponse:
     """Add two numbers."""
     return ResultResponse(result=add(req.a, req.b))
 
 
-@app.post("/subtract", response_model=ResultResponse)
+@router.post("/subtract", response_model=ResultResponse)
 def api_subtract(req: CalculationRequest) -> ResultResponse:
     """Subtract b from a."""
     return ResultResponse(result=subtract(req.a, req.b))
 
 
-@app.post("/multiply", response_model=ResultResponse)
+@router.post("/multiply", response_model=ResultResponse)
 def api_multiply(req: CalculationRequest) -> ResultResponse:
     """Multiply two numbers."""
     return ResultResponse(result=multiply(req.a, req.b))
 
 
-@app.post("/divide", response_model=ResultResponse)
+@router.post("/divide", response_model=ResultResponse)
 def api_divide(req: CalculationRequest) -> ResultResponse:
     """Divide a by b."""
     try:
@@ -126,7 +153,7 @@ def api_divide(req: CalculationRequest) -> ResultResponse:
 # --- CRUD Endpoints for Calculations ---
 
 
-@app.post("/calculations", response_model=CalculationResponse, status_code=201)
+@router.post("/calculations", response_model=CalculationResponse, status_code=201)
 def create_calculation(
     req: CalculationCreate, session: Session = Depends(get_session)
 ) -> Calculation:
@@ -148,13 +175,13 @@ def create_calculation(
     return calculation
 
 
-@app.get("/calculations", response_model=list[CalculationResponse])
+@router.get("/calculations", response_model=list[CalculationResponse])
 def list_calculations(session: Session = Depends(get_session)) -> list[Calculation]:
     """List all stored calculations."""
     return list(session.exec(select(Calculation).order_by(Calculation.created_at.desc())).all())
 
 
-@app.get("/calculations/{calculation_id}", response_model=CalculationResponse)
+@router.get("/calculations/{calculation_id}", response_model=CalculationResponse)
 def get_calculation(calculation_id: int, session: Session = Depends(get_session)) -> Calculation:
     """Get a specific calculation by ID."""
     calculation = session.get(Calculation, calculation_id)
@@ -163,7 +190,7 @@ def get_calculation(calculation_id: int, session: Session = Depends(get_session)
     return calculation
 
 
-@app.delete("/calculations/{calculation_id}", status_code=204)
+@router.delete("/calculations/{calculation_id}", status_code=204)
 def delete_calculation(calculation_id: int, session: Session = Depends(get_session)) -> None:
     """Delete a calculation by ID."""
     calculation = session.get(Calculation, calculation_id)
@@ -173,10 +200,26 @@ def delete_calculation(calculation_id: int, session: Session = Depends(get_sessi
     session.commit()
 
 
+def create_app(engine: Engine | None = None, settings: Settings | None = None) -> FastAPI:
+    """Create an application bound to one configuration and database engine."""
+    app_settings = settings if settings is not None else load_settings()
+    app_engine = (
+        engine if engine is not None else create_database_engine(app_settings.database_url)
+    )
+    application = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
+    application.state.engine = app_engine
+    application.state.settings = app_settings
+    application.include_router(router)
+    return application
+
+
+app = create_app()
+
+
 def main() -> None:
     """Run the server."""
-    port = int(os.environ.get("PORT", "8000"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    settings = load_settings()
+    uvicorn.run(app, host="0.0.0.0", port=settings.port)
 
 
 if __name__ == "__main__":
