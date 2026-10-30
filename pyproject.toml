@@ -40,6 +40,9 @@ select = ["E", "F", "I", "W"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+exclude = [".venv", "build", "dist"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

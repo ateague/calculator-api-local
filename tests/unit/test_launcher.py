@@ -4,6 +4,7 @@ import runpy
 from unittest.mock import Mock
 
 import pytest
+from sqlalchemy import MetaData
 
 import server
 
@@ -64,6 +65,7 @@ def test_direct_script_guard_launches_its_fastapi_app(monkeypatch: pytest.Monkey
     monkeypatch.delenv("PORT", raising=False)
     run_mock = Mock()
     monkeypatch.setattr(server.uvicorn, "run", run_mock)
+    monkeypatch.setattr(server.SQLModel, "metadata", MetaData())
 
     script_path = server.__file__
     assert script_path is not None

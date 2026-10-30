@@ -1,6 +1,6 @@
 """HTTP acceptance tests for the calculator API."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -154,9 +154,9 @@ def test_calculation_history_is_newest_first_without_clock_timing(client: TestCl
         assert response.status_code == 201
         created.append(response.json())
     timestamps = [
-        datetime(2024, 1, 1, 12, 0, 0),
-        datetime(2024, 1, 3, 12, 0, 0),
-        datetime(2024, 1, 2, 12, 0, 0),
+        datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
+        datetime(2024, 1, 3, 12, 0, 0, tzinfo=UTC),
+        datetime(2024, 1, 2, 12, 0, 0, tzinfo=UTC),
     ]
     engine = _app(client).state.engine
     with Session(engine) as session:
