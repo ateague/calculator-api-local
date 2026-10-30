@@ -3,45 +3,16 @@
 from __future__ import annotations
 
 import os
-import signal
-import socket
-import subprocess
-import time
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 
 import pytest
 import requests
+from server_runner import ServerRunner, free_port
 
 REPO_ROOT = Path(__file__).parents[3]
 CONSOLE = REPO_ROOT / ".venv" / "bin" / "calculator-api"
-
-
-def _free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
-def _wait_until_ready(base_url: str, process: subprocess.Popen[str]) -> None:
-    deadline = time.monotonic() + 15
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            stdout, stderr = process.communicate()
-            raise AssertionError(
-                f"calculator-api exited before readiness ({process.returncode})\n{stdout}{stderr}"
-            )
-        try:
-            response = requests.post(
-                f"{base_url}/add", json={"a": 1, "b": 1}, timeout=0.5
-            )
-            if response.status_code == 200 and response.json() == {"result": 2.0}:
-                return
-        except requests.RequestException:
-            pass
-        time.sleep(0.05)
-    raise AssertionError("calculator-api did not become ready within 15 seconds")
 
 
 @pytest.fixture(scope="session")
@@ -49,28 +20,26 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     """Start the installed app with a run-owned database and track its PID."""
     runtime_dir = tmp_path_factory.mktemp("calculator-functional-api")
     database_path = runtime_dir / "functional-calculator.db"
-    port = _free_port()
+    port = free_port()
     env = os.environ.copy()
     env["PORT"] = str(port)
     env["DATABASE_URL"] = f"sqlite:///{database_path}"
-    process = subprocess.Popen(
+    with ServerRunner(
         [str(CONSOLE)],
         cwd=runtime_dir,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    print(f"functional API PID={process.pid}")
-    url = f"http://127.0.0.1:{port}"
-    try:
-        _wait_until_ready(url, process)
+        port=port,
+        label="calculator-api",
+    ) as server:
+        server.wait_until_ready(
+            lambda: requests.post(
+                f"{server.base_url}/add", json={"a": 1, "b": 1}, timeout=0.5
+            ),
+            lambda response: response.status_code == 200
+            and response.json() == {"result": 2.0},
+        )
         assert database_path.exists()
-        yield url
-    finally:
-        if process.poll() is None:
-            process.send_signal(signal.SIGINT)
-        process.communicate(timeout=10)
+        yield server.base_url
 
 
 @pytest.fixture(autouse=True)

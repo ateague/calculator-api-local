@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import os
-import signal
-import socket
-import subprocess
-import time
 from pathlib import Path
 
 import requests
+from server_runner import ServerRunner, free_port
 
 REPO_ROOT = Path(__file__).parents[3]
 PYTHON = REPO_ROOT / ".venv" / "bin" / "python"
@@ -17,51 +14,26 @@ CONSOLE = REPO_ROOT / ".venv" / "bin" / "calculator-api"
 SERVER = REPO_ROOT / "server.py"
 
 
-def _free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
 def _exercise_and_stop(
     command: list[str], cwd: Path, env: dict[str, str], port: int
 ) -> tuple[int, str, str, requests.Response]:
-    process = subprocess.Popen(
+    with ServerRunner(
         command,
         cwd=cwd,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    print(f"launcher PID={process.pid} command={command[0]}")
-    response = None
-    deadline = time.monotonic() + 15
-    try:
-        while time.monotonic() < deadline:
-            if process.poll() is not None:
-                break
-            try:
-                candidate = requests.post(
-                    f"http://127.0.0.1:{port}/calculations",
-                    json={"operation": "mul", "a": 7, "b": 6},
-                    timeout=0.5,
-                )
-                if candidate.status_code == 201:
-                    response = candidate
-                    break
-            except requests.RequestException:
-                pass
-            time.sleep(0.05)
-    finally:
-        if process.poll() is None:
-            process.send_signal(signal.SIGINT)
-        stdout, stderr = process.communicate(timeout=10)
-    if response is None:
-        raise AssertionError(
-            f"launcher did not serve a persisted calculation\n{stdout}{stderr}"
+        port=port,
+        label="launcher",
+    ) as server:
+        response = server.wait_until_ready(
+            lambda: requests.post(
+                f"{server.base_url}/calculations",
+                json={"operation": "mul", "a": 7, "b": 6},
+                timeout=0.5,
+            ),
+            lambda candidate: candidate.status_code == 201,
         )
-    return process.returncode, stdout, stderr, response
+    result = server.result
+    return result.returncode, result.stdout, result.stderr, response
 
 
 def test_direct_script_uses_default_port_and_database(tmp_path: Path, record_cli) -> None:
@@ -86,7 +58,7 @@ def test_direct_script_uses_default_port_and_database(tmp_path: Path, record_cli
 def test_console_launcher_uses_overridden_port_and_database(
     tmp_path: Path, record_cli
 ) -> None:
-    port = _free_port()
+    port = free_port()
     database_path = tmp_path / "overridden-calculator.db"
     env = os.environ.copy()
     env["PORT"] = str(port)
@@ -105,4 +77,3 @@ def test_console_launcher_uses_overridden_port_and_database(
     assert database_path.exists()
     assert not (tmp_path / "calculator.db").exists()
     assert f"http://0.0.0.0:{port}" in stderr
-
