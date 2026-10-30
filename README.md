@@ -4,8 +4,13 @@ A very simple REST API server that reuses functionality from `calculator-cli`.
 
 ## Setup
 
+Use Python 3.12 or newer. Create and activate a virtual environment, then install the
+application with its test and development tools:
+
 ```bash
-pip install -e .
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[test]"
 ```
 
 ## Run
@@ -21,6 +26,40 @@ calculator-api
 ```
 
 The server runs on `http://localhost:8000`.
+
+## Configuration
+
+The service reads these environment variables when it starts:
+
+| Variable | Default | Behavior |
+|----------|---------|----------|
+| `PORT` | `8000` | Sets the Uvicorn listening port. An override must be an integer; an invalid value raises `ValueError`. |
+| `DATABASE_URL` | `sqlite:///calculator.db` | Sets the SQLModel database URL. The default stores data in `calculator.db` in the current working directory. |
+
+For example, to use a different port and SQLite file:
+
+```bash
+PORT=8080 DATABASE_URL=sqlite:///local-calculator.db calculator-api
+```
+
+## Quality Checks
+
+Run the branch-aware test and coverage gate (80% minimum over `core.py` and `server.py`):
+
+```bash
+python -m pytest
+```
+
+Run lint and type checks separately:
+
+```bash
+python -m ruff check .
+python -m pyright
+```
+
+Persistence tests use a fresh temporary SQLite database for each test. They never create,
+read, modify, or delete the developer database at the default root-level `calculator.db`
+location.
 
 ## Endpoints
 
