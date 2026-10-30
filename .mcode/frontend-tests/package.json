@@ -1,0 +1,10 @@
+{
+  "name": "calculator-api-browser-tests",
+  "private": true,
+  "scripts": {
+    "test": "playwright test --config=playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
