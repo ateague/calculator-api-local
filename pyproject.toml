@@ -42,13 +42,7 @@ venvPath = "."
 venv = ".venv"
 
 [tool.pytest.ini_options]
-addopts = [
-    "--cov=core",
-    "--cov=server",
-    "--cov-branch",
-    "--cov-report=term-missing",
-    "--cov-fail-under=80",
-]
+addopts = ["--cov"]
 testpaths = ["tests"]
 
 [tool.coverage.run]

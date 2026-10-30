@@ -161,3 +161,16 @@ def test_main_is_the_declared_console_callable() -> None:
     assert callable(server.main)
     console_callable = project_configuration["project"]["scripts"]["calculator-api"]
     assert console_callable == "server:main"
+
+
+def test_coverage_policy_has_single_configuration_source() -> None:
+    project_configuration = tomllib.loads(
+        (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    )
+
+    tool_configuration = project_configuration["tool"]
+    assert tool_configuration["pytest"]["ini_options"]["addopts"] == ["--cov"]
+    assert tool_configuration["coverage"]["run"]["source"] == ["core", "server"]
+    assert tool_configuration["coverage"]["run"]["branch"] is True
+    assert tool_configuration["coverage"]["report"]["show_missing"] is True
+    assert tool_configuration["coverage"]["report"]["fail_under"] == 80
