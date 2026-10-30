@@ -1,9 +1,0 @@
-# Playwright's per-run outputs — uploaded by Morph, never committed.
-/test-results/
-/playwright-results.json
-/playwright-report/
-/blob-report/
-/.last-run.json
-
-# Local test-runner dependencies.
-/node_modules/
