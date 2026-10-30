@@ -71,3 +71,21 @@ def client(application: FastAPI) -> Iterator[TestClient]:
     """Run lifespan for an isolated application and expose its test client."""
     with TestClient(application) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def representative_calculations(
+    client: TestClient,
+) -> dict[str, dict[str, object]]:
+    """Persist reusable representative calculations in the isolated test database."""
+    payloads: dict[str, dict[str, object]] = {
+        "add": {"operation": "add", "a": 1.0, "b": 1.0},
+        "sub": {"operation": "sub", "a": 10.0, "b": 4.0},
+        "mul": {"operation": "mul", "a": 6.0, "b": 7.0},
+    }
+    created: dict[str, dict[str, object]] = {}
+    for name, payload in payloads.items():
+        response = client.post("/calculations", json=payload)
+        assert response.status_code == 201
+        created[name] = response.json()
+    return created

@@ -124,14 +124,11 @@ def test_list_calculations_is_empty_initially(client: TestClient) -> None:
 
 
 def test_list_calculations_orders_newest_first_deterministically(
-    client: TestClient, database_engine: Engine
+    client: TestClient,
+    database_engine: Engine,
+    representative_calculations: dict[str, dict[str, object]],
 ) -> None:
-    created = [
-        client.post(
-            "/calculations", json={"operation": "add", "a": value, "b": 1.0}
-        ).json()
-        for value in (1.0, 2.0, 3.0)
-    ]
+    created = list(representative_calculations.values())
     base_time = datetime(2024, 1, 1, 12, 0, 0)
 
     with Session(database_engine) as session:
@@ -154,10 +151,11 @@ def test_list_calculations_orders_newest_first_deterministically(
         assert set(body) == RESPONSE_FIELDS
 
 
-def test_get_calculation_returns_complete_found_record(client: TestClient) -> None:
-    created = client.post(
-        "/calculations", json={"operation": "mul", "a": 6.0, "b": 7.0}
-    ).json()
+def test_get_calculation_returns_complete_found_record(
+    client: TestClient,
+    representative_calculations: dict[str, dict[str, object]],
+) -> None:
+    created = representative_calculations["mul"]
 
     response = client.get(f"/calculations/{created['id']}")
 
@@ -184,10 +182,9 @@ def test_get_calculation_rejects_noninteger_id(client: TestClient) -> None:
 
 def test_delete_calculation_removes_record_and_returns_empty_body(
     client: TestClient,
+    representative_calculations: dict[str, dict[str, object]],
 ) -> None:
-    created = client.post(
-        "/calculations", json={"operation": "sub", "a": 10.0, "b": 4.0}
-    ).json()
+    created = representative_calculations["sub"]
 
     response = client.delete(f"/calculations/{created['id']}")
 
