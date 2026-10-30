@@ -53,10 +53,9 @@ def record_cli():
     return capture
 
 
-def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+def pytest_sessionfinish() -> None:
     """Write evidence atomically enough for the result-recording pass."""
     EVIDENCE_PATH.write_text(
         json.dumps(EVIDENCE, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-
