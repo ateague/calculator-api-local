@@ -1,6 +1,6 @@
 """HTTP acceptance tests for the calculator API."""
 
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import cast
 
@@ -35,7 +35,7 @@ def _app(client: TestClient) -> FastAPI:
 
 
 def _parse_timestamp(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromisoformat(value)
 
 
 def test_operation_registry_has_exact_tokens_and_function_mappings() -> None:
@@ -114,7 +114,13 @@ def test_create_calculation_persists_every_operation_token(
     assert calculation["result"] == expected
     assert isinstance(calculation["id"], int)
     assert calculation["id"] > 0
-    assert isinstance(_parse_timestamp(calculation["created_at"]), datetime)
+    parsed_created_at = _parse_timestamp(calculation["created_at"])
+    assert parsed_created_at.tzinfo is None
+    engine = _app(client).state.engine
+    with Session(engine) as session:
+        persisted = session.get(Calculation, calculation["id"])
+        assert persisted is not None
+        assert persisted.created_at.tzinfo is None
     assert client.get("/calculations").json() == [calculation]
 
 
@@ -154,9 +160,9 @@ def test_calculation_history_is_newest_first_without_clock_timing(client: TestCl
         assert response.status_code == 201
         created.append(response.json())
     timestamps = [
-        datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
-        datetime(2024, 1, 3, 12, 0, 0, tzinfo=UTC),
-        datetime(2024, 1, 2, 12, 0, 0, tzinfo=UTC),
+        datetime(2024, 1, 1, 12, 0, 0),
+        datetime(2024, 1, 3, 12, 0, 0),
+        datetime(2024, 1, 2, 12, 0, 0),
     ]
     engine = _app(client).state.engine
     with Session(engine) as session:
@@ -177,6 +183,7 @@ def test_calculation_history_is_newest_first_without_clock_timing(client: TestCl
         created[0]["id"],
     ]
     parsed_timestamps = [_parse_timestamp(item["created_at"]) for item in history]
+    assert all(timestamp.tzinfo is None for timestamp in parsed_timestamps)
     assert parsed_timestamps == sorted(parsed_timestamps, reverse=True)
 
 

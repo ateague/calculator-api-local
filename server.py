@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, NaiveDatetime
 from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
@@ -69,7 +69,9 @@ class Calculation(CalculationBase, table=True):
     """Database model for stored calculations."""
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: NaiveDatetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
 
 
 class CalculationCreate(BaseModel):

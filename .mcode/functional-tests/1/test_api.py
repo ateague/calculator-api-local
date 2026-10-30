@@ -179,7 +179,8 @@ class TestCalculationHistory:
             assert item["operation"] == token
             assert item["result"] == expected
             assert isinstance(item["id"], int) and item["id"] > 0
-            datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(item["created_at"])
+            assert created_at.tzinfo is None
             found = requests.get(
                 f"{base_url}/calculations/{item['id']}", timeout=5
             )
@@ -206,9 +207,10 @@ class TestCalculationHistory:
             item["id"] for item in reversed(created)
         ]
         timestamps = [
-            datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+            datetime.fromisoformat(item["created_at"])
             for item in history
         ]
+        assert all(timestamp.tzinfo is None for timestamp in timestamps)
         assert timestamps == sorted(timestamps, reverse=True)
 
     def test_unknown_operation_fails_without_persisting(
@@ -276,4 +278,3 @@ class TestCalculationHistory:
         record_rest("test_delete_missing_calculation", response)
         assert response.status_code == 404
         assert response.json() == {"detail": "Calculation not found"}
-
