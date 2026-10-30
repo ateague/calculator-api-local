@@ -12,7 +12,7 @@ test.describe("Calculator API generated browser surfaces", () => {
     const openApiLink = page.getByRole("link", { name: "/openapi.json" });
     await expect(openApiLink).toHaveAttribute("href", "/openapi.json");
     expect(await openApiLink.evaluate((link: HTMLAnchorElement) => link.href)).toBe(
-      "http://127.0.0.1:8180/openapi.json",
+      new URL("/openapi.json", page.url()).href,
     );
 
     const operations = page.locator(".opblock-summary");
@@ -72,7 +72,7 @@ test.describe("Calculator API generated browser surfaces", () => {
 
     const addOperation = page.locator(".opblock-post.is-open");
     await expect(addOperation.locator(".request-url")).toContainText(
-      "http://127.0.0.1:8180/add",
+      new URL("/add", page.url()).href,
     );
     const liveResponse = addOperation.locator(".live-responses-table tbody tr");
     await expect(liveResponse.locator(".response-col_status")).toHaveText("200");
