@@ -2,7 +2,8 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, NaiveDatetime
+from pydantic import BaseModel
+from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -19,7 +20,7 @@ class Calculation(CalculationBase, table=True):
     """Database model for a stored calculation."""
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow, sa_type=DateTime)
 
 
 class CalculationCreate(BaseModel):

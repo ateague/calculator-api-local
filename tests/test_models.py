@@ -73,6 +73,23 @@ def test_calculation_has_pre_persistence_id_and_utc_timestamp_defaults() -> None
     assert calculation.created_at.tzinfo is None
 
 
+def test_calculation_accepts_timezone_aware_created_at() -> None:
+    timestamp = datetime(2026, 1, 2, tzinfo=UTC)
+
+    calculation = Calculation.model_validate(
+        {
+            "operation": "add",
+            "a": 1,
+            "b": 2,
+            "result": 3,
+            "created_at": timestamp,
+        }
+    )
+
+    assert calculation.created_at == timestamp
+    assert calculation.created_at.tzinfo is UTC
+
+
 @pytest.mark.parametrize(
     ("model", "payload", "expected"),
     [
