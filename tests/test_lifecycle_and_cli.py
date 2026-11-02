@@ -175,11 +175,22 @@ def test_main_invokes_uvicorn_with_validated_settings(monkeypatch: pytest.Monkey
     assert calls == [(api.app, {"host": "0.0.0.0", "port": 9345})]
 
 
-def test_top_level_core_and_server_shims_preserve_exports() -> None:
+def test_top_level_core_and_server_shims_preserve_exports(tmp_path: Path) -> None:
     packaged_core = importlib.import_module("calculator_api.core")
     api = importlib.reload(importlib.import_module("calculator_api.api"))
     compatibility_core = importlib.import_module("core")
     server = importlib.reload(importlib.import_module("server"))
+    legacy_callable_names = (
+        "lifespan",
+        "api_add",
+        "api_subtract",
+        "api_multiply",
+        "api_divide",
+        "create_calculation",
+        "list_calculations",
+        "get_calculation",
+        "delete_calculation",
+    )
 
     assert compatibility_core.add is packaged_core.add
     assert compatibility_core.subtract is packaged_core.subtract
@@ -191,6 +202,23 @@ def test_top_level_core_and_server_shims_preserve_exports() -> None:
     assert server.get_session is server.app.state.get_session
     assert server.engine is server.app.state.engine
     assert set(server.OPERATIONS) == {"add", "sub", "mul", "div"}
+    for name in legacy_callable_names:
+        assert callable(getattr(api, name))
+        assert getattr(server, name) is getattr(api, name)
+        assert name in api.__all__
+        assert name in server.__all__
+
+    fresh_app = api.create_app(
+        Settings(database_url=f"sqlite:///{tmp_path / 'compatibility.sqlite3'}")
+    )
+    registered_endpoints = {
+        nested_route.endpoint
+        for route in fresh_app.routes
+        for nested_route in getattr(getattr(route, "original_router", None), "routes", ())
+    }
+    for name in legacy_callable_names[1:]:
+        assert getattr(api, name) in registered_endpoints
+
     with pytest.raises(AttributeError, match="does_not_exist"):
         getattr(server, "does_not_exist")
 

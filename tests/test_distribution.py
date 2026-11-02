@@ -26,6 +26,20 @@ paths = {
 assert all(path.is_relative_to(installation) for path in paths.values()), paths
 assert modules["core"].add(2, 3) == 5
 assert modules["server"].app.title == "Calculator API"
+legacy_callable_names = (
+    "lifespan",
+    "api_add",
+    "api_subtract",
+    "api_multiply",
+    "api_divide",
+    "create_calculation",
+    "list_calculations",
+    "get_calculation",
+    "delete_calculation",
+)
+assert all(callable(getattr(modules["server"], name)) for name in legacy_callable_names)
+request = modules["server"].CalculationRequest(a=2, b=3)
+assert modules["server"].api_add(request).result == 5
 print(json.dumps({name: str(path) for name, path in paths.items()}))
 """
 

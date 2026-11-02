@@ -3,7 +3,21 @@
 
 from sqlalchemy.engine import Engine
 
-from calculator_api.api import OPERATIONS, app, create_app, main
+from calculator_api.api import (
+    OPERATIONS,
+    api_add,
+    api_divide,
+    api_multiply,
+    api_subtract,
+    app,
+    create_app,
+    create_calculation,
+    delete_calculation,
+    get_calculation,
+    lifespan,
+    list_calculations,
+    main,
+)
 from calculator_api.config import (
     DEFAULT_DATABASE_URL,
     DEFAULT_PORT,
@@ -45,13 +59,22 @@ __all__ = [
     "SessionDependency",
     "Settings",
     "add",
+    "api_add",
+    "api_divide",
+    "api_multiply",
+    "api_subtract",
     "app",
     "create_app",
+    "create_calculation",
     "create_db_engine",
     "create_session_dependency",
+    "delete_calculation",
     "divide",
     "engine",
+    "get_calculation",
     "get_session",
+    "lifespan",
+    "list_calculations",
     "load_settings",
     "main",
     "multiply",
