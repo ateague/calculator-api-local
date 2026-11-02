@@ -56,6 +56,20 @@ def _get_app_session(request: Request) -> Iterator[Session]:
     yield from dependency()
 
 
+def _get_calculation_or_404(
+    session: Session,
+    calculation_id: int,
+) -> Calculation:
+    """Return a stored calculation or raise the public not-found response."""
+    calculation = session.get(Calculation, calculation_id)
+    if calculation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Calculation not found",
+        )
+    return calculation
+
+
 _router = APIRouter()
 
 
@@ -129,13 +143,7 @@ def get_calculation(
     session: Annotated[Session, Depends(_get_app_session)],
 ) -> Calculation:
     """Return one stored calculation."""
-    calculation = session.get(Calculation, calculation_id)
-    if calculation is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Calculation not found",
-        )
-    return calculation
+    return _get_calculation_or_404(session, calculation_id)
 
 
 @_router.delete(
@@ -147,12 +155,7 @@ def delete_calculation(
     session: Annotated[Session, Depends(_get_app_session)],
 ) -> Response:
     """Delete one stored calculation."""
-    calculation = session.get(Calculation, calculation_id)
-    if calculation is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Calculation not found",
-        )
+    calculation = _get_calculation_or_404(session, calculation_id)
     session.delete(calculation)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
