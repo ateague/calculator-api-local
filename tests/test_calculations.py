@@ -68,6 +68,17 @@ def test_persisted_division_by_zero_is_400_and_adds_no_row(app_context) -> None:
     assert app_context.client.get("/calculations").json() == []
 
 
+def test_create_rejects_malformed_json_and_adds_no_row(app_context) -> None:
+    response = app_context.client.post(
+        "/calculations",
+        content="{",
+        headers={"content-type": "application/json"},
+    )
+
+    assert response.status_code == 422
+    assert app_context.client.get("/calculations").json() == []
+
+
 @pytest.mark.parametrize(
     "payload",
     [
