@@ -29,11 +29,9 @@ test = [
 calculator-api = "calculator_api.api:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {calculator_api = "src/calculator_api"}
+packages = ["calculator_api"]
 py-modules = ["core", "server"]
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.pytest.ini_options]
 addopts = [
