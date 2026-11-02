@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
-"""Compatibility entry point for the packaged Calculator API.
+"""Compatibility exports and script entry point for the Calculator API."""
 
-The HTTP application and persistence delegates are added by the API foundation
-layer. Keeping imports here limited to the completed package modules leaves this
-shim importable while that layer is assembled.
-"""
-
-from importlib import import_module
-
+from calculator_api.api import OPERATIONS, app, create_app, main
 from calculator_api.config import (
     DEFAULT_DATABASE_URL,
     DEFAULT_PORT,
@@ -15,6 +9,11 @@ from calculator_api.config import (
     load_settings,
 )
 from calculator_api.core import add, divide, multiply, subtract
+from calculator_api.database import (
+    SessionDependency,
+    create_db_engine,
+    create_session_dependency,
+)
 from calculator_api.models import (
     Calculation,
     CalculationBase,
@@ -24,11 +23,15 @@ from calculator_api.models import (
     ResultResponse,
 )
 
-DATABASE_URL = DEFAULT_DATABASE_URL
-PORT = DEFAULT_PORT
+DATABASE_URL: str = app.state.settings.database_url
+PORT: int = app.state.settings.port
+get_session: SessionDependency = app.state.get_session
 
 __all__ = [
     "DATABASE_URL",
+    "DEFAULT_DATABASE_URL",
+    "DEFAULT_PORT",
+    "OPERATIONS",
     "PORT",
     "Calculation",
     "CalculationBase",
@@ -36,9 +39,16 @@ __all__ = [
     "CalculationRequest",
     "CalculationResponse",
     "ResultResponse",
+    "SessionDependency",
     "Settings",
     "add",
+    "app",
+    "create_app",
+    "create_db_engine",
+    "create_session_dependency",
     "divide",
+    "engine",
+    "get_session",
     "load_settings",
     "main",
     "multiply",
@@ -46,9 +56,11 @@ __all__ = [
 ]
 
 
-def main() -> None:
-    """Delegate server startup to the installed application package."""
-    import_module("calculator_api.api").main()
+def __getattr__(name: str) -> object:
+    """Expose the default app's engine without owning a second global engine."""
+    if name == "engine":
+        return app.state.engine
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":
