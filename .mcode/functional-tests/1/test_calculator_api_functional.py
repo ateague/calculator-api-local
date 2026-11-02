@@ -8,6 +8,7 @@ import socket
 import subprocess
 import time
 from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -69,6 +70,37 @@ def wait_for_app(base_url: str, process: subprocess.Popen[str]) -> None:
             pass
         time.sleep(0.1)
     pytest.fail(f"server did not become ready at {base_url}")
+
+
+@contextmanager
+def managed_console_server(
+    tmp_path: Path, *, database_name: str, port: int | None
+) -> Iterator[str]:
+    environment = os.environ.copy()
+    environment["DATABASE_URL"] = f"sqlite:///{tmp_path / database_name}"
+    if port is None:
+        environment.pop("PORT", None)
+        server_port = 8000
+    else:
+        environment["PORT"] = str(port)
+        server_port = port
+
+    base_url = f"http://127.0.0.1:{server_port}"
+    process = subprocess.Popen(
+        [str(REPOSITORY_ROOT / ".venv/bin/calculator-api")],
+        cwd=tmp_path,
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        wait_for_app(base_url, process)
+        yield base_url
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            process.wait(timeout=10)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -337,33 +369,19 @@ class TestLaunchAndConfiguration:
         assert response.json() == {"result": 42.0}
 
     def test_default_port_console_launch(self, tmp_path: Path) -> None:
-        default_url = "http://127.0.0.1:8000"
         with socket.socket() as probe:
             probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind(("127.0.0.1", 8000))
 
-        environment = os.environ.copy()
-        environment.pop("PORT", None)
-        environment["DATABASE_URL"] = f"sqlite:///{tmp_path / 'default-port.sqlite3'}"
-        process = subprocess.Popen(
-            [str(REPOSITORY_ROOT / ".venv/bin/calculator-api")],
-            cwd=tmp_path,
-            env=environment,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        try:
-            wait_for_app(default_url, process)
+        with managed_console_server(
+            tmp_path, database_name="default-port.sqlite3", port=None
+        ) as default_url:
             response = requests.post(
                 f"{default_url}/subtract", json={"a": 50, "b": 8}, timeout=TIMEOUT
             )
             record_response("test_default_port_console_launch", response)
             assert response.status_code == 200
             assert response.json() == {"result": 42.0}
-        finally:
-            process.terminate()
-            process.wait(timeout=10)
 
     def test_database_url_isolates_persistence(self, tmp_path: Path) -> None:
         main_created = requests.post(
@@ -374,25 +392,11 @@ class TestLaunchAndConfiguration:
         assert main_created.status_code == 201
 
         port = unused_port()
-        isolated_url = f"http://127.0.0.1:{port}"
-        environment = os.environ.copy()
-        environment["PORT"] = str(port)
-        environment["DATABASE_URL"] = f"sqlite:///{tmp_path / 'isolated.sqlite3'}"
-        process = subprocess.Popen(
-            [str(REPOSITORY_ROOT / ".venv/bin/calculator-api")],
-            cwd=tmp_path,
-            env=environment,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        try:
-            wait_for_app(isolated_url, process)
+        with managed_console_server(
+            tmp_path, database_name="isolated.sqlite3", port=port
+        ) as isolated_url:
             response = requests.get(f"{isolated_url}/calculations", timeout=TIMEOUT)
             record_response("test_database_url_isolates_persistence", response)
             assert response.status_code == 200
             assert response.json() == []
             assert len(requests.get(f"{BASE_URL}/calculations", timeout=TIMEOUT).json()) == 1
-        finally:
-            process.terminate()
-            process.wait(timeout=10)
