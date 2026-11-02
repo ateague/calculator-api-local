@@ -1,27 +1,5 @@
-"""Core calculator functions."""
+"""Compatibility exports for the packaged calculator operations."""
 
+from calculator_api.core import add, divide, multiply, subtract
 
-def add(a: float, b: float) -> float:
-    """Add two numbers."""
-    return a + b
-
-
-def subtract(a: float, b: float) -> float:
-    """Subtract b from a."""
-    return a - b
-
-
-def multiply(a: float, b: float) -> float:
-    """Multiply two numbers."""
-    return a * b
-
-
-def divide(a: float, b: float) -> float:
-    """Divide a by b.
-
-    Raises:
-        ValueError: If b is zero.
-    """
-    if b == 0:
-        raise ValueError("Cannot divide by zero")
-    return a / b
+__all__ = ["add", "divide", "multiply", "subtract"]
