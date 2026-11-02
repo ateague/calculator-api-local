@@ -29,6 +29,17 @@ OPERATIONS: dict[str, Operation] = {
 }
 
 
+def _execute_operation(operation: Operation, a: float, b: float) -> float:
+    """Execute an operation and translate calculator errors to HTTP 400."""
+    try:
+        return operation(a, b)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        ) from error
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     """Create database tables on the engine owned by the active application."""
@@ -69,14 +80,7 @@ def api_multiply(req: CalculationRequest) -> ResultResponse:
 @_router.post("/divide", response_model=ResultResponse)
 def api_divide(req: CalculationRequest) -> ResultResponse:
     """Divide ``a`` by ``b``."""
-    try:
-        result = divide(req.a, req.b)
-    except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error),
-        ) from error
-    return ResultResponse(result=result)
+    return ResultResponse(result=_execute_operation(divide, req.a, req.b))
 
 
 @_router.post(
@@ -96,13 +100,7 @@ def create_calculation(
             detail=f"Unknown operation: {req.operation}. Use: {list(OPERATIONS)}",
         )
 
-    try:
-        result = operation(req.a, req.b)
-    except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error),
-        ) from error
+    result = _execute_operation(operation, req.a, req.b)
 
     calculation = Calculation(
         operation=req.operation,
