@@ -30,6 +30,7 @@ calculator-api = "calculator_api.api:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+py-modules = ["core", "server"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -45,6 +46,7 @@ addopts = [
     "--cov-fail-under=80",
 ]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true

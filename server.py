@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Compatibility exports and script entry point for the Calculator API."""
 
+from sqlalchemy.engine import Engine
+
 from calculator_api.api import OPERATIONS, app, create_app, main
 from calculator_api.config import (
     DEFAULT_DATABASE_URL,
@@ -26,6 +28,7 @@ from calculator_api.models import (
 DATABASE_URL: str = app.state.settings.database_url
 PORT: int = app.state.settings.port
 get_session: SessionDependency = app.state.get_session
+engine: Engine
 
 __all__ = [
     "DATABASE_URL",
