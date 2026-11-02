@@ -20,7 +20,6 @@ class AppContext:
 
     app: FastAPI
     client: TestClient
-    database_path: Path
 
     @property
     def engine(self) -> Engine:
@@ -48,4 +47,4 @@ def app_context(tmp_path: Path) -> Iterator[AppContext]:
     assert not database_path.exists()
     with TestClient(app) as client:
         assert database_path.is_file()
-        yield AppContext(app=app, client=client, database_path=database_path)
+        yield AppContext(app=app, client=client)
