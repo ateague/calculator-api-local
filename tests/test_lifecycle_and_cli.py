@@ -6,6 +6,7 @@ import tomllib
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -39,15 +40,23 @@ def test_module_app_defers_database_creation_until_lifespan(
         assert inspect(api.app.state.engine).has_table("calculation")
 
 
-def test_explicit_app_lifespan_creates_table_only_on_startup(tmp_path: Path) -> None:
+def test_explicit_app_lifespan_creates_table_only_on_startup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     api = importlib.import_module("calculator_api.api")
     database_path = tmp_path / "lifecycle.sqlite3"
     app = api.create_app(Settings(database_url=f"sqlite:///{database_path}"))
+    engine = cast(Engine, app.state.engine)
+    dispose = Mock(wraps=engine.dispose)
+    monkeypatch.setattr(engine, "dispose", dispose)
 
     assert not database_path.exists()
     with TestClient(app):
         assert database_path.is_file()
-        assert inspect(app.state.engine).has_table("calculation")
+        assert inspect(engine).has_table("calculation")
+        dispose.assert_not_called()
+
+    dispose.assert_called_once_with()
 
 
 def test_app_instances_have_isolated_database_state(tmp_path: Path) -> None:

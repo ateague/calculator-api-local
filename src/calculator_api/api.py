@@ -32,8 +32,11 @@ OPERATIONS: dict[str, Operation] = {
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     """Create database tables on the engine owned by the active application."""
-    SQLModel.metadata.create_all(application.state.engine)
-    yield
+    try:
+        SQLModel.metadata.create_all(application.state.engine)
+        yield
+    finally:
+        application.state.engine.dispose()
 
 
 def _get_app_session(request: Request) -> Iterator[Session]:
