@@ -1,14 +1,56 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const swaggerOperations = [
-  ["#operations-default-api_add_add_post .opblock-summary-control", "POST /add Api Add"],
-  ["#operations-default-api_subtract_subtract_post .opblock-summary-control", "POST /subtract Api Subtract"],
-  ["#operations-default-api_multiply_multiply_post .opblock-summary-control", "POST /multiply Api Multiply"],
-  ["#operations-default-api_divide_divide_post .opblock-summary-control", "POST /divide Api Divide"],
-  ["#operations-default-list_calculations_calculations_get .opblock-summary-control", "GET /calculations List Calculations"],
-  ["#operations-default-create_calculation_calculations_post .opblock-summary-control", "POST /calculations Create Calculation"],
-  ["#operations-default-get_calculation_calculations__calculation_id__get .opblock-summary-control", "GET /calculations/{calculation_id} Get Calculation"],
-  ["#operations-default-delete_calculation_calculations__calculation_id__delete .opblock-summary-control", "DELETE /calculations/{calculation_id} Delete Calculation"],
+const operations = [
+  {
+    selector: "#operations-default-api_add_add_post .opblock-summary-control",
+    method: "POST",
+    path: "/add",
+    name: "Api Add",
+  },
+  {
+    selector: "#operations-default-api_subtract_subtract_post .opblock-summary-control",
+    method: "POST",
+    path: "/subtract",
+    name: "Api Subtract",
+  },
+  {
+    selector: "#operations-default-api_multiply_multiply_post .opblock-summary-control",
+    method: "POST",
+    path: "/multiply",
+    name: "Api Multiply",
+  },
+  {
+    selector: "#operations-default-api_divide_divide_post .opblock-summary-control",
+    method: "POST",
+    path: "/divide",
+    name: "Api Divide",
+  },
+  {
+    selector: "#operations-default-list_calculations_calculations_get .opblock-summary-control",
+    method: "GET",
+    path: "/calculations",
+    name: "List Calculations",
+  },
+  {
+    selector: "#operations-default-create_calculation_calculations_post .opblock-summary-control",
+    method: "POST",
+    path: "/calculations",
+    name: "Create Calculation",
+  },
+  {
+    selector:
+      "#operations-default-get_calculation_calculations__calculation_id__get .opblock-summary-control",
+    method: "GET",
+    path: "/calculations/{calculation_id}",
+    name: "Get Calculation",
+  },
+  {
+    selector:
+      "#operations-default-delete_calculation_calculations__calculation_id__delete .opblock-summary-control",
+    method: "DELETE",
+    path: "/calculations/{calculation_id}",
+    name: "Delete Calculation",
+  },
 ] as const;
 
 const schemaNames = [
@@ -20,23 +62,12 @@ const schemaNames = [
   "ValidationError",
 ] as const;
 
-const operationNames = [
-  "Api Add",
-  "Api Subtract",
-  "Api Multiply",
-  "Api Divide",
-  "List Calculations",
-  "Create Calculation",
-  "Get Calculation",
-  "Delete Calculation",
-] as const;
-
 async function openSwagger(page: Page) {
   await page.goto("/docs");
   // CDN-loaded generated UIs can retain background connections; the operation
   // control below is the authoritative signal that OpenAPI rendering finished.
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
-  await page.locator(swaggerOperations[0][0]).waitFor();
+  await page.locator(operations[0].selector).waitFor();
 }
 
 test.describe("Calculator API generated documentation", () => {
@@ -50,7 +81,8 @@ test.describe("Calculator API generated documentation", () => {
       "/openapi.json",
     );
 
-    for (const [selector, label] of swaggerOperations) {
+    for (const { selector, method, path, name } of operations) {
+      const label = `${method} ${path} ${name}`;
       await expect(page.locator(selector), label).toBeVisible();
       await expect(page.locator(selector), label).toHaveAccessibleName(label);
     }
@@ -105,7 +137,7 @@ test.describe("Calculator API generated documentation", () => {
     await expect(operation.locator(".responses-table").getByText("201", { exact: true }).first()).toBeVisible();
     await expect(operation.locator(".responses-table").getByText("422", { exact: true }).first()).toBeVisible();
 
-    for (const [selector] of swaggerOperations.slice(4)) {
+    for (const { selector } of operations.slice(4)) {
       await expect(page.locator(selector)).toBeVisible();
     }
   });
@@ -122,8 +154,8 @@ test.describe("Calculator API generated documentation", () => {
       "http://127.0.0.1:8127/openapi.json",
     );
 
-    for (const operationName of operationNames) {
-      await expect(page.locator("h2").filter({ hasText: operationName }), operationName).toBeVisible();
+    for (const { name } of operations) {
+      await expect(page.locator("h2").filter({ hasText: name }), name).toBeVisible();
     }
 
     const requestSchemas = page.locator("h5").filter({ hasText: /Request Body schema:/i });
