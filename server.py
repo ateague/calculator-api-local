@@ -10,7 +10,7 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 from sqlalchemy import Engine
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
 from core import add, divide, multiply, subtract
 
@@ -177,7 +177,9 @@ def create_calculation(
 @router.get("/calculations", response_model=list[CalculationResponse])
 def list_calculations(session: Session = Depends(get_session)) -> list[Calculation]:
     """List all stored calculations."""
-    statement = select(Calculation).order_by(Calculation.created_at.desc(), Calculation.id.desc())
+    statement = select(Calculation).order_by(
+        col(Calculation.created_at).desc(), col(Calculation.id).desc()
+    )
     return list(session.exec(statement).all())
 
 
