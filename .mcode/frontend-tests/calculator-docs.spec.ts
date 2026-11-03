@@ -92,7 +92,7 @@ test.describe("Calculator API generated documentation", () => {
     }
   });
 
-  test("Swagger UI executes a successful add request", async ({ page }) => {
+  test("Swagger UI executes a successful add request", async ({ page, baseURL }) => {
     await openSwagger(page);
     const operation = page.locator("#operations-default-api_add_add_post");
 
@@ -118,7 +118,7 @@ test.describe("Calculator API generated documentation", () => {
     await expect(
       liveResponse.locator(".response-col_description pre").filter({ hasText: /"result"/ }),
     ).toContainText(/"result"\s*:\s*10/);
-    await expect(operation.locator(".request-url pre")).toHaveText("http://127.0.0.1:8127/add");
+    await expect(operation.locator(".request-url pre")).toHaveText(new URL("/add", baseURL).href);
   });
 
   test("Swagger UI exposes calculation-history request and response contracts", async ({ page }) => {
@@ -142,7 +142,7 @@ test.describe("Calculator API generated documentation", () => {
     }
   });
 
-  test("ReDoc renders all operations and request and response schema samples", async ({ page }) => {
+  test("ReDoc renders all operations and request and response schema samples", async ({ page, baseURL }) => {
     await page.goto("/redoc");
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
     await page.getByRole("heading", { level: 1, name: "Calculator API (0.1.0)", exact: true }).waitFor();
@@ -151,7 +151,7 @@ test.describe("Calculator API generated documentation", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calculator API (0.1.0)");
     await expect(page.getByRole("link", { name: "Download", exact: true })).toHaveAttribute(
       "href",
-      "http://127.0.0.1:8127/openapi.json",
+      new URL("/openapi.json", baseURL).href,
     );
 
     for (const { name } of operations) {
