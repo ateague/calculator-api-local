@@ -10,6 +10,7 @@ import socket
 import sqlite3
 import subprocess
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -60,20 +61,56 @@ def _assert_utc_offset(value: str) -> None:
     assert value.endswith("Z") or value.endswith("+00:00"), value
 
 
+def _verify_database_binding() -> None:
+    """Prove the candidate server reads the lifecycle's isolated database."""
+    marker = f"binding-probe-{uuid.uuid4().hex}"
+    connection = sqlite3.connect(DATABASE_PATH)
+    calculation_id: int | None = None
+    try:
+        cursor = connection.execute(
+            "INSERT INTO calculation (operation, a, b, result, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (marker, 0.0, 0.0, 0.0, "2000-01-01 00:00:00.000000"),
+        )
+        assert cursor.lastrowid is not None
+        calculation_id = int(cursor.lastrowid)
+        connection.commit()
+
+        response = requests.get(f"{BASE_URL}/calculations/{calculation_id}", timeout=5)
+        assert response.status_code == 200, (
+            f"server at {BASE_URL} is not bound to {DATABASE_PATH}: "
+            f"GET /calculations/{calculation_id} returned {response.status_code}"
+        )
+        body = response.json()
+        assert body["id"] == calculation_id and body["operation"] == marker, (
+            f"server at {BASE_URL} returned a different calculation from {DATABASE_PATH}"
+        )
+    finally:
+        if calculation_id is not None:
+            connection.execute("DELETE FROM calculation WHERE id = ?", (calculation_id,))
+            connection.commit()
+        connection.close()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def managed_application() -> None:
     """Start the installed target command when no managed server remains live."""
+    expected_database_url = f"sqlite:///{DATABASE_PATH}"
     try:
         existing = requests.post(f"{BASE_URL}/add", json={"a": 1, "b": 1}, timeout=1)
-        if existing.status_code == 200:
-            yield
-            return
     except requests.RequestException:
-        pass
+        existing = None
+    if existing is not None and existing.status_code == 200:
+        assert os.environ.get("DATABASE_URL") == expected_database_url, (
+            f"refusing to reuse {BASE_URL}: DATABASE_URL must be {expected_database_url}"
+        )
+        _verify_database_binding()
+        yield
+        return
 
     environment = os.environ.copy()
     environment["PORT"] = BASE_URL.rsplit(":", 1)[1]
-    environment["DATABASE_URL"] = f"sqlite:///{DATABASE_PATH}"
+    environment["DATABASE_URL"] = expected_database_url
     process = subprocess.Popen(
         [str(CONSOLE)],
         cwd=REPO_ROOT,
@@ -84,6 +121,8 @@ def managed_application() -> None:
     )
     try:
         _wait_for_server(BASE_URL)
+        assert process.poll() is None, "managed calculator process exited during startup"
+        _verify_database_binding()
         yield
     finally:
         stdout, stderr, returncode = _stop_server(process)
