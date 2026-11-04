@@ -86,41 +86,42 @@ def test_create_app_binds_overridden_temporary_database(tmp_path: Path) -> None:
         application_engine.dispose()
 
 
-def test_database_url_defaults_during_fresh_module_execution(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+@pytest.mark.parametrize(
+    ("configured_database_filename", "run_name"),
+    [
+        pytest.param(None, "server_default_database_test", id="default"),
+        pytest.param(
+            "environment-override.sqlite3",
+            "server_database_override_test",
+            id="environment-override",
+        ),
+    ],
+)
+def test_database_url_during_fresh_module_execution(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    configured_database_filename: str | None,
+    run_name: str,
 ) -> None:
-    """A fresh server execution retains the documented local SQLite default."""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("DATABASE_URL", raising=False)
+    """A fresh server execution binds its app to the selected database URL."""
+    if configured_database_filename is None:
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        expected_database_url = "sqlite:///calculator.db"
+        expected_database_path = tmp_path / "calculator.db"
+    else:
+        expected_database_path = tmp_path / configured_database_filename
+        expected_database_url = f"sqlite:///{expected_database_path}"
+        monkeypatch.setenv("DATABASE_URL", expected_database_url)
 
-    namespace = _execute_server_module(monkeypatch, run_name="server_default_database_test")
+    namespace = _execute_server_module(monkeypatch, run_name=run_name)
     application = cast(FastAPI, namespace["app"])
     application_engine: Engine = application.state.engine
 
     try:
-        assert namespace["DATABASE_URL"] == "sqlite:///calculator.db"
-        assert str(application_engine.url) == "sqlite:///calculator.db"
-        assert not (tmp_path / "calculator.db").exists()
-    finally:
-        application_engine.dispose()
-
-
-def test_database_url_override_during_fresh_module_execution(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """A fresh server execution binds its app to the environment override."""
-    database_path = tmp_path / "environment-override.sqlite3"
-    database_url = f"sqlite:///{database_path}"
-    monkeypatch.setenv("DATABASE_URL", database_url)
-
-    namespace = _execute_server_module(monkeypatch, run_name="server_database_override_test")
-    application = cast(FastAPI, namespace["app"])
-    application_engine: Engine = application.state.engine
-
-    try:
-        assert namespace["DATABASE_URL"] == database_url
-        assert str(application_engine.url) == database_url
-        assert not database_path.exists()
+        assert namespace["DATABASE_URL"] == expected_database_url
+        assert str(application_engine.url) == expected_database_url
+        assert not expected_database_path.exists()
     finally:
         application_engine.dispose()
 
