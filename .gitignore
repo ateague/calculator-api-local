@@ -1,0 +1,25 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python caches and test/tool state
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+*.py[cod]
+*.pyc
+*.pyo
+
+# Coverage and build artifacts
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Generated local SQLite databases
+*.db
+*.sqlite
+*.sqlite3
