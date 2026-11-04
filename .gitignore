@@ -8,8 +8,6 @@ __pycache__/
 .ruff_cache/
 .pyright/
 *.py[cod]
-*.pyc
-*.pyo
 
 # Coverage and build artifacts
 .coverage
@@ -19,7 +17,5 @@ build/
 dist/
 *.egg-info/
 
-# Generated local SQLite databases
-*.db
-*.sqlite
-*.sqlite3
+# Default local SQLite database
+calculator.db

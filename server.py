@@ -2,14 +2,13 @@
 """A very simple calculator REST API server."""
 
 import os
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
-from sqlalchemy import Engine
 from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
 from core import add, divide, multiply, subtract
@@ -17,31 +16,13 @@ from core import add, divide, multiply, subtract
 # --- Database Setup ---
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///calculator.db")
+engine = create_engine(DATABASE_URL, echo=False)
 
 
-def create_database_engine(database_url: str) -> Engine:
-    """Create an engine suitable for the configured database URL."""
-    connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
-    return create_engine(database_url, echo=False, connect_args=connect_args)
-
-
-engine: Engine
-
-
-def get_session() -> Iterator[Session]:
+def get_session() -> Generator[Session, None, None]:
     """Yield a database session."""
     with Session(engine) as session:
         yield session
-
-
-def _session_dependency(database_engine: Engine) -> Callable[[], Iterator[Session]]:
-    """Create a session dependency bound to one application engine."""
-
-    def session_dependency() -> Iterator[Session]:
-        with Session(database_engine) as session:
-            yield session
-
-    return session_dependency
 
 
 # --- Models ---
@@ -105,11 +86,11 @@ class ResultResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Create database tables on startup."""
-    SQLModel.metadata.create_all(app.state.engine)
+    SQLModel.metadata.create_all(engine)
     yield
 
 
-router = APIRouter()
+app = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
 
 OPERATIONS: dict[str, Callable[[float, float], float]] = {
     "add": add,
@@ -122,25 +103,25 @@ OPERATIONS: dict[str, Callable[[float, float], float]] = {
 # --- Calculator Endpoints ---
 
 
-@router.post("/add", response_model=ResultResponse)
+@app.post("/add", response_model=ResultResponse)
 def api_add(req: CalculationRequest) -> ResultResponse:
     """Add two numbers."""
     return ResultResponse(result=add(req.a, req.b))
 
 
-@router.post("/subtract", response_model=ResultResponse)
+@app.post("/subtract", response_model=ResultResponse)
 def api_subtract(req: CalculationRequest) -> ResultResponse:
     """Subtract b from a."""
     return ResultResponse(result=subtract(req.a, req.b))
 
 
-@router.post("/multiply", response_model=ResultResponse)
+@app.post("/multiply", response_model=ResultResponse)
 def api_multiply(req: CalculationRequest) -> ResultResponse:
     """Multiply two numbers."""
     return ResultResponse(result=multiply(req.a, req.b))
 
 
-@router.post("/divide", response_model=ResultResponse)
+@app.post("/divide", response_model=ResultResponse)
 def api_divide(req: CalculationRequest) -> ResultResponse:
     """Divide a by b."""
     try:
@@ -152,7 +133,7 @@ def api_divide(req: CalculationRequest) -> ResultResponse:
 # --- CRUD Endpoints for Calculations ---
 
 
-@router.post("/calculations", response_model=CalculationResponse, status_code=201)
+@app.post("/calculations", response_model=CalculationResponse, status_code=201)
 def create_calculation(
     req: CalculationCreate, session: Session = Depends(get_session)
 ) -> Calculation:
@@ -174,7 +155,7 @@ def create_calculation(
     return calculation
 
 
-@router.get("/calculations", response_model=list[CalculationResponse])
+@app.get("/calculations", response_model=list[CalculationResponse])
 def list_calculations(session: Session = Depends(get_session)) -> list[Calculation]:
     """List all stored calculations."""
     statement = select(Calculation).order_by(
@@ -183,7 +164,7 @@ def list_calculations(session: Session = Depends(get_session)) -> list[Calculati
     return list(session.exec(statement).all())
 
 
-@router.get("/calculations/{calculation_id}", response_model=CalculationResponse)
+@app.get("/calculations/{calculation_id}", response_model=CalculationResponse)
 def get_calculation(calculation_id: int, session: Session = Depends(get_session)) -> Calculation:
     """Get a specific calculation by ID."""
     calculation = session.get(Calculation, calculation_id)
@@ -192,7 +173,7 @@ def get_calculation(calculation_id: int, session: Session = Depends(get_session)
     return calculation
 
 
-@router.delete("/calculations/{calculation_id}", status_code=204)
+@app.delete("/calculations/{calculation_id}", status_code=204)
 def delete_calculation(calculation_id: int, session: Session = Depends(get_session)) -> None:
     """Delete a calculation by ID."""
     calculation = session.get(Calculation, calculation_id)
@@ -200,20 +181,6 @@ def delete_calculation(calculation_id: int, session: Session = Depends(get_sessi
         raise HTTPException(status_code=404, detail="Calculation not found")
     session.delete(calculation)
     session.commit()
-
-
-def create_app(database_url: str = DATABASE_URL) -> FastAPI:
-    """Create a calculator application bound to the requested database."""
-    application_engine = create_database_engine(database_url)
-    application = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
-    application.state.engine = application_engine
-    application.dependency_overrides[get_session] = _session_dependency(application_engine)
-    application.include_router(router)
-    return application
-
-
-app = create_app()
-engine = app.state.engine
 
 
 def main() -> None:

@@ -5,14 +5,14 @@ service runs on CPython 3.12 and uses the calculator functions in this repositor
 
 ## Setup
 
-Install CPython 3.12.16, then create a repository-local virtual environment and install the
-application with its development tools:
+Install CPython 3.12, then create a clean repository-local virtual environment and install the
+application:
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ".[test]"
+python -m pip install -e .
 ```
 
 ## Configuration
@@ -46,15 +46,6 @@ calculator-api
 
 The server listens on `0.0.0.0:8000` by default and is available locally at
 `http://localhost:8000`.
-
-## Verify
-
-Run the foundation quality checks from the repository root:
-
-```bash
-ruff check .
-pyright
-```
 
 ## Endpoints
 
@@ -101,7 +92,7 @@ curl -X POST http://localhost:8000/calculations \
   -d '{"operation": "mul", "a": 7, "b": 6}'
 ```
 
-New timestamps are recorded in UTC and serialized with an explicit UTC offset.
+Timestamps are recorded in UTC and serialized with an explicit UTC offset.
 
 Response: `{"operation": "mul", "a": 7.0, "b": 6.0, "result": 42.0, "id": 1, "created_at": "2026-11-03T21:00:00Z"}`
 
@@ -124,7 +115,6 @@ FastAPI auto-generates docs at:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 - OpenAPI JSON: http://localhost:8000/openapi.json
-
 ## Changes
 
 NOP
