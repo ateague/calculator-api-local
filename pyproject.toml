@@ -15,7 +15,10 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+    "httpx~=0.28.1",
     "pyright~=1.1.414",
+    "pytest~=9.2.0",
+    "pytest-cov~=7.1.0",
     "ruff~=0.17.3",
 ]
 
@@ -34,3 +37,13 @@ select = ["E", "F", "I", "W"]
 [tool.pyright]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=core",
+    "--cov=server",
+    "--cov-branch",
+    "--cov-report=term-missing",
+    "--cov-fail-under=100",
+]
+testpaths = ["tests"]

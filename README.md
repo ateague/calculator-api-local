@@ -49,12 +49,17 @@ The server listens on `0.0.0.0:8000` by default and is available locally at
 
 ## Verify
 
-Run the foundation quality checks from the repository root:
+Run the quality checks from the repository root:
 
 ```bash
 ruff check .
 pyright
+pytest
 ```
+
+The ordinary `pytest` command is the single clean-checkout test command. It runs the unit and
+API/database integration suite, measures only `core.py` and `server.py` with branch coverage,
+prints missing lines, and fails unless both statement and branch coverage reach 100%.
 
 ## Endpoints
 
