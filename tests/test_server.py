@@ -12,6 +12,7 @@ from unittest.mock import Mock
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from httpx import Response
 from sqlalchemy import Engine, MetaData, inspect
 from sqlalchemy.pool import QueuePool
 from sqlmodel import Session, SQLModel
@@ -36,6 +37,20 @@ def _assert_explicit_utc_offset(value: str) -> None:
 
     assert parsed.tzinfo is not None
     assert parsed.utcoffset() == timedelta(0)
+
+
+def _assert_validation_error(
+    response: Response,
+    *,
+    expected_location: tuple[str, ...],
+    expected_type: str,
+) -> None:
+    """Assert one stable FastAPI validation error without matching prose."""
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert [(tuple(error["loc"]), error["type"]) for error in detail] == [
+        (expected_location, expected_type)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -181,11 +196,11 @@ def test_direct_arithmetic_validation(
     """Direct routes expose stable validation locations and error categories."""
     response = client.post(route, json=payload)
 
-    assert response.status_code == 422
-    detail = response.json()["detail"]
-    assert [(tuple(error["loc"]), error["type"]) for error in detail] == [
-        (expected_location, expected_type)
-    ]
+    _assert_validation_error(
+        response,
+        expected_location=expected_location,
+        expected_type=expected_type,
+    )
 
 
 def test_direct_divide_by_zero(client: TestClient) -> None:
@@ -292,11 +307,11 @@ def test_create_calculation_validation(
     """Stored-calculation validation asserts stable locations and categories."""
     response = client.post("/calculations", json=payload)
 
-    assert response.status_code == 422
-    detail = response.json()["detail"]
-    assert [(tuple(error["loc"]), error["type"]) for error in detail] == [
-        (expected_location, expected_type)
-    ]
+    _assert_validation_error(
+        response,
+        expected_location=expected_location,
+        expected_type=expected_type,
+    )
 
 
 def test_list_calculations_is_empty_for_a_fresh_database(client: TestClient) -> None:
