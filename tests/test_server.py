@@ -177,12 +177,19 @@ def test_direct_arithmetic_success(
     ("payload", "expected_location", "expected_type"),
     [
         pytest.param({"a": 2}, ("body", "b"), "missing", id="missing-required-value"),
+        pytest.param({"b": 2}, ("body", "a"), "missing", id="missing-a"),
         pytest.param([], ("body",), "model_attributes_type", id="malformed-body"),
         pytest.param(
             {"a": "not-a-number", "b": 2},
             ("body", "a"),
             "float_parsing",
             id="non-numeric-value",
+        ),
+        pytest.param(
+            {"a": 2, "b": "not-a-number"},
+            ("body", "b"),
+            "float_parsing",
+            id="non-numeric-b",
         ),
     ],
 )
@@ -284,6 +291,18 @@ def test_create_calculation_rejects_zero_divisor(client: TestClient) -> None:
     ("payload", "expected_location", "expected_type"),
     [
         pytest.param(
+            {"a": 2, "b": 3},
+            ("body", "operation"),
+            "missing",
+            id="missing-operation",
+        ),
+        pytest.param(
+            {"operation": "add", "b": 3},
+            ("body", "a"),
+            "missing",
+            id="missing-a",
+        ),
+        pytest.param(
             {"operation": "add", "a": 2},
             ("body", "b"),
             "missing",
@@ -295,6 +314,12 @@ def test_create_calculation_rejects_zero_divisor(client: TestClient) -> None:
             ("body", "a"),
             "float_parsing",
             id="non-numeric-value",
+        ),
+        pytest.param(
+            {"operation": "add", "a": 2, "b": "not-a-number"},
+            ("body", "b"),
+            "float_parsing",
+            id="non-numeric-b",
         ),
     ],
 )
