@@ -1,18 +1,33 @@
 """Contract tests for calculator API routes and generated documentation."""
 
+import runpy
+from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from importlib import metadata
+from pathlib import Path
+from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, inspect
+from sqlalchemy import Engine, MetaData, inspect
 from sqlalchemy.pool import QueuePool
-from sqlmodel import Session
+from sqlmodel import SQLModel, Session
 
-from server import Calculation
+import server
+from server import Calculation, CalculationResponse
 
 
 DIRECT_ROUTES = ("/add", "/subtract", "/multiply", "/divide")
+
+
+def _execute_server_module(
+    monkeypatch: pytest.MonkeyPatch, *, run_name: str
+) -> dict[str, Any]:
+    """Execute server.py with isolated model metadata and return its globals."""
+    monkeypatch.setattr(SQLModel, "metadata", MetaData())
+    return runpy.run_path(str(Path(server.__file__).resolve()), run_name=run_name)
 
 
 def _assert_explicit_utc_offset(value: str) -> None:
@@ -21,6 +36,93 @@ def _assert_explicit_utc_offset(value: str) -> None:
 
     assert parsed.tzinfo is not None
     assert parsed.utcoffset() == timedelta(0)
+
+
+@pytest.mark.parametrize(
+    ("database_url", "expected_connect_args"),
+    [
+        pytest.param(
+            "sqlite:///temporary.db",
+            {"check_same_thread": False},
+            id="sqlite-thread-sharing",
+        ),
+        pytest.param(
+            "postgresql://calculator@example.invalid/calculator",
+            {},
+            id="non-sqlite",
+        ),
+    ],
+)
+def test_database_engine_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+    database_url: str,
+    expected_connect_args: dict[str, bool],
+) -> None:
+    """Engine construction uses SQLite thread options only for SQLite URLs."""
+    expected_engine = cast(Engine, object())
+    create_engine = Mock(return_value=expected_engine)
+    monkeypatch.setattr(server, "create_engine", create_engine)
+
+    actual_engine = server.create_database_engine(database_url)
+
+    assert actual_engine is expected_engine
+    create_engine.assert_called_once_with(
+        database_url, echo=False, connect_args=expected_connect_args
+    )
+
+
+def test_create_app_binds_overridden_temporary_database(tmp_path: Path) -> None:
+    """Application construction binds its dependency to the requested database."""
+    database_path = tmp_path / "create-app-override.sqlite3"
+    database_url = f"sqlite:///{database_path}"
+    application = server.create_app(database_url)
+    application_engine: Engine = application.state.engine
+
+    try:
+        assert str(application_engine.url) == database_url
+        assert server.get_session in application.dependency_overrides
+        assert not database_path.exists()
+    finally:
+        application_engine.dispose()
+
+
+def test_database_url_defaults_during_fresh_module_execution(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A fresh server execution retains the documented local SQLite default."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+    namespace = _execute_server_module(monkeypatch, run_name="server_default_database_test")
+    application = cast(FastAPI, namespace["app"])
+    application_engine: Engine = application.state.engine
+
+    try:
+        assert namespace["DATABASE_URL"] == "sqlite:///calculator.db"
+        assert str(application_engine.url) == "sqlite:///calculator.db"
+        assert not (tmp_path / "calculator.db").exists()
+    finally:
+        application_engine.dispose()
+
+
+def test_database_url_override_during_fresh_module_execution(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A fresh server execution binds its app to the environment override."""
+    database_path = tmp_path / "environment-override.sqlite3"
+    database_url = f"sqlite:///{database_path}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+
+    namespace = _execute_server_module(monkeypatch, run_name="server_database_override_test")
+    application = cast(FastAPI, namespace["app"])
+    application_engine: Engine = application.state.engine
+
+    try:
+        assert namespace["DATABASE_URL"] == database_url
+        assert str(application_engine.url) == database_url
+        assert not database_path.exists()
+    finally:
+        application_engine.dispose()
 
 
 def test_lifespan_creates_calculation_table(engine: Engine) -> None:
@@ -349,6 +451,25 @@ def test_legacy_naive_timestamp_is_retained_and_serialized_as_utc(
         assert retained.created_at.tzinfo is None
 
 
+def test_calculation_response_retains_aware_timestamp() -> None:
+    """Timestamp normalization leaves an existing explicit offset unchanged."""
+    aware_timestamp = datetime(
+        2030, 4, 5, 6, 7, 8, tzinfo=timezone(timedelta(hours=5, minutes=30))
+    )
+
+    response = CalculationResponse(
+        id=1,
+        operation="add",
+        a=20,
+        b=22,
+        result=42,
+        created_at=aware_timestamp,
+    )
+
+    assert response.created_at == aware_timestamp
+    assert response.created_at.utcoffset() == timedelta(hours=5, minutes=30)
+
+
 def test_request_dependency_returns_sessions_to_engine_pool(
     client: TestClient, engine: Engine
 ) -> None:
@@ -368,6 +489,32 @@ def test_request_dependency_returns_sessions_to_engine_pool(
 
     assert missing.status_code == 404
     assert pool.checkedout() == 0
+
+
+def test_direct_get_session_closes_checked_out_connection(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The module session generator returns its connection when exhausted."""
+    application_engine = server.create_database_engine(
+        f"sqlite:///{tmp_path / 'direct-session.sqlite3'}"
+    )
+    pool = application_engine.pool
+    assert isinstance(pool, QueuePool)
+    monkeypatch.setattr(server, "engine", application_engine)
+    session_dependency = cast(Generator[Session, None, None], server.get_session())
+
+    try:
+        session = next(session_dependency)
+        session.connection()
+        assert pool.checkedout() == 1
+
+        with pytest.raises(StopIteration):
+            next(session_dependency)
+
+        assert pool.checkedout() == 0
+    finally:
+        session_dependency.close()
+        application_engine.dispose()
 
 
 def test_openapi_and_generated_documentation(client: TestClient) -> None:
@@ -403,3 +550,66 @@ def test_openapi_and_generated_documentation(client: TestClient) -> None:
     assert actual_operations == expected_operations
     assert "Swagger UI" in docs_response.text
     assert "ReDoc" in redoc_response.text
+
+
+@pytest.mark.parametrize(
+    ("configured_port", "expected_port"),
+    [
+        pytest.param(None, 8000, id="default"),
+        pytest.param("9123", 9123, id="environment-override"),
+    ],
+)
+def test_main_runs_uvicorn_with_configured_port(
+    monkeypatch: pytest.MonkeyPatch,
+    configured_port: str | None,
+    expected_port: int,
+) -> None:
+    """Main launches the module app on every interface with the selected port."""
+    if configured_port is None:
+        monkeypatch.delenv("PORT", raising=False)
+    else:
+        monkeypatch.setenv("PORT", configured_port)
+    uvicorn_run = Mock()
+    monkeypatch.setattr(server.uvicorn, "run", uvicorn_run)
+
+    server.main()
+
+    uvicorn_run.assert_called_once_with(
+        server.app, host="0.0.0.0", port=expected_port
+    )
+
+
+def test_direct_module_execution_calls_main_without_listening(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Executing server.py directly reaches main with isolated model metadata."""
+    database_path = tmp_path / "direct-execution.sqlite3"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
+    monkeypatch.setenv("PORT", "9456")
+    uvicorn_run = Mock()
+    monkeypatch.setattr(server.uvicorn, "run", uvicorn_run)
+
+    namespace = _execute_server_module(monkeypatch, run_name="__main__")
+    application = cast(FastAPI, namespace["app"])
+    application_engine: Engine = application.state.engine
+
+    try:
+        uvicorn_run.assert_called_once_with(
+            application, host="0.0.0.0", port=9456
+        )
+        assert not database_path.exists()
+    finally:
+        application_engine.dispose()
+
+
+def test_installed_console_entry_point_resolves_to_main() -> None:
+    """Installed distribution metadata exposes the calculator-api command."""
+    distribution = metadata.distribution("calculator-api")
+    entry_points = [
+        entry_point
+        for entry_point in distribution.entry_points
+        if entry_point.group == "console_scripts" and entry_point.name == "calculator-api"
+    ]
+
+    assert [entry_point.value for entry_point in entry_points] == ["server:main"]
+    assert entry_points[0].load() is server.main

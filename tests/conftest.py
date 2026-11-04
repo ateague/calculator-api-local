@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,45 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 
 import server
+
+
+DEFAULT_DATABASE_PATH = Path(__file__).resolve().parents[1] / "calculator.db"
+
+
+@dataclass(frozen=True)
+class FileFingerprint:
+    """Identity and content details needed to detect database mutation."""
+
+    exists: bool
+    sha256: str | None = None
+    size: int | None = None
+    mtime_ns: int | None = None
+
+
+def _fingerprint(path: Path) -> FileFingerprint:
+    """Return a stable fingerprint for an existing or absent file."""
+    if not path.exists():
+        return FileFingerprint(exists=False)
+
+    contents = path.read_bytes()
+    stat = path.stat()
+    return FileFingerprint(
+        exists=True,
+        sha256=hashlib.sha256(contents).hexdigest(),
+        size=len(contents),
+        mtime_ns=stat.st_mtime_ns,
+    )
+
+
+DEFAULT_DATABASE_BEFORE_TESTS = _fingerprint(DEFAULT_DATABASE_PATH)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def default_database_is_unchanged() -> Iterator[None]:
+    """Prove the complete test session neither creates nor mutates calculator.db."""
+    yield
+
+    assert _fingerprint(DEFAULT_DATABASE_PATH) == DEFAULT_DATABASE_BEFORE_TESTS
 
 
 @dataclass(frozen=True)
