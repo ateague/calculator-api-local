@@ -1,6 +1,7 @@
 """Contract tests for calculator API routes and generated documentation."""
 
 import runpy
+import sqlite3
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 from importlib import metadata
@@ -411,27 +412,19 @@ def test_delete_calculation_removes_row(client: TestClient, engine: Engine) -> N
 
 
 def test_legacy_naive_timestamp_is_retained_and_serialized_as_utc(
-    client: TestClient, engine: Engine
+    client: TestClient, database_path: Path
 ) -> None:
     """A legacy naive database timestamp is preserved but exposed as UTC."""
     legacy_timestamp = datetime(2001, 2, 3, 4, 5, 6, 789000)
-    calculation = Calculation(
-        operation="add",
-        a=20,
-        b=22,
-        result=42,
-        created_at=legacy_timestamp,
-    )
-    with Session(engine) as session:
-        session.add(calculation)
-        session.commit()
-        session.refresh(calculation)
-        calculation_id = calculation.id
+    with sqlite3.connect(database_path) as connection:
+        cursor = connection.execute(
+            "INSERT INTO calculation (operation, a, b, result, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            ("add", 20.0, 22.0, 42.0, legacy_timestamp.isoformat(" ")),
+        )
+        assert cursor.lastrowid is not None
+        calculation_id = int(cursor.lastrowid)
 
-        assert calculation.created_at == legacy_timestamp
-        assert calculation.created_at.tzinfo is None
-
-    assert calculation_id is not None
     response = client.get(f"/calculations/{calculation_id}")
 
     assert response.status_code == 200
@@ -442,12 +435,28 @@ def test_legacy_naive_timestamp_is_retained_and_serialized_as_utc(
         tzinfo=timezone.utc
     )
 
-    with Session(engine) as session:
-        retained = session.get(Calculation, calculation_id)
+    with sqlite3.connect(database_path) as connection:
+        retained = connection.execute(
+            "SELECT created_at FROM calculation WHERE id = ?", (calculation_id,)
+        ).fetchone()
 
-        assert retained is not None
-        assert retained.created_at == legacy_timestamp
-        assert retained.created_at.tzinfo is None
+    assert retained == (legacy_timestamp.isoformat(" "),)
+
+
+def test_calculation_response_normalizes_naive_timestamp() -> None:
+    """Response validation explicitly treats a legacy naive value as UTC."""
+    naive_timestamp = datetime(2001, 2, 3, 4, 5, 6)
+
+    response = CalculationResponse(
+        id=1,
+        operation="add",
+        a=20,
+        b=22,
+        result=42,
+        created_at=naive_timestamp,
+    )
+
+    assert response.created_at == naive_timestamp.replace(tzinfo=timezone.utc)
 
 
 def test_calculation_response_retains_aware_timestamp() -> None:
