@@ -11,8 +11,6 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 
-import server
-
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parents[1] / "calculator.db"
 
 
@@ -64,6 +62,9 @@ class CalculatorApi:
 @pytest.fixture
 def calculator_api(tmp_path: Path) -> Iterator[CalculatorApi]:
     """Run one application lifespan against a unique file-backed SQLite database."""
+    # Keep server import after the repository database baseline is captured.
+    import server
+
     database_path = tmp_path / "calculator-test.sqlite3"
     application = server.create_app(f"sqlite:///{database_path}")
     application_engine: Engine = application.state.engine
