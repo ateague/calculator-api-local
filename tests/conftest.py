@@ -8,11 +8,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-import server
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 
+import server
 
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parents[1] / "calculator.db"
 

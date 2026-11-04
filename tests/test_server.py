@@ -9,14 +9,14 @@ from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
-import server
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from server import Calculation, CalculationResponse
 from sqlalchemy import Engine, MetaData, inspect
 from sqlalchemy.pool import QueuePool
 from sqlmodel import Session, SQLModel
 
+import server
+from server import Calculation, CalculationResponse
 
 DIRECT_ROUTES = ("/add", "/subtract", "/multiply", "/divide")
 
