@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 
@@ -58,7 +57,6 @@ class CalculatorApi:
     """A running calculator application bound to an isolated database."""
 
     client: TestClient
-    app: FastAPI
     engine: Engine
     database_path: Path
 
@@ -74,7 +72,6 @@ def calculator_api(tmp_path: Path) -> Iterator[CalculatorApi]:
         with TestClient(application) as client:
             yield CalculatorApi(
                 client=client,
-                app=application,
                 engine=application_engine,
                 database_path=database_path,
             )
@@ -86,12 +83,6 @@ def calculator_api(tmp_path: Path) -> Iterator[CalculatorApi]:
 def client(calculator_api: CalculatorApi) -> TestClient:
     """Return the client for the current isolated application."""
     return calculator_api.client
-
-
-@pytest.fixture
-def app(calculator_api: CalculatorApi) -> FastAPI:
-    """Return the current isolated application."""
-    return calculator_api.app
 
 
 @pytest.fixture
