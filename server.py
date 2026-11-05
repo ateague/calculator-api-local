@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """A very simple calculator REST API server."""
 
-from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import AsyncGenerator
-
 import os
+from collections.abc import AsyncGenerator, Callable, Generator
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
@@ -16,11 +15,11 @@ from core import add, divide, multiply, subtract
 
 # --- Database Setup ---
 
-DATABASE_URL = "sqlite:///calculator.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///calculator.db")
 engine = create_engine(DATABASE_URL, echo=False)
 
 
-def get_session() -> Session:  # type: ignore[misc]
+def get_session() -> Generator[Session, None, None]:
     """Yield a database session."""
     with Session(engine) as session:
         yield session
@@ -38,11 +37,16 @@ class CalculationBase(SQLModel):
     result: float
 
 
+def naive_utc_now() -> datetime:
+    """Return the current UTC time without timezone metadata for SQLite compatibility."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class Calculation(CalculationBase, table=True):
     """Database model for stored calculations."""
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=naive_utc_now)
 
 
 class CalculationCreate(BaseModel):
@@ -85,7 +89,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title="Calculator API", version="0.1.0", lifespan=lifespan)
 
-OPERATIONS: dict[str, callable] = {  # type: ignore[type-arg]
+OPERATIONS: dict[str, Callable[[float, float], float]] = {
     "add": add,
     "sub": subtract,
     "mul": multiply,

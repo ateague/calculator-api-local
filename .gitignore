@@ -1,0 +1,23 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python caches and test output
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+
+# Coverage output
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Build and package output
+build/
+dist/
+*.egg-info/
+
+# Runtime data
+calculator.db
