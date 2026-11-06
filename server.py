@@ -263,6 +263,10 @@ def api_divide(req: CalculationRequest) -> ResultResponse:
 
 # --- CRUD Endpoints for Calculations ---
 
+CALCULATION_NOT_FOUND_RESPONSES: dict[int | str, dict[str, str]] = {
+    404: {"description": "No calculation with this ID: detail is `Calculation not found`."}
+}
+
 
 @app.post(
     "/calculations",
@@ -334,9 +338,7 @@ def list_calculations(session: Session = Depends(get_session)) -> list[Calculati
     response_model=CalculationResponse,
     summary="Get a calculation",
     description="Return the stored calculation with the given `calculation_id`.",
-    responses={
-        404: {"description": "No calculation with this ID: detail is `Calculation not found`."}
-    },
+    responses=CALCULATION_NOT_FOUND_RESPONSES,
 )
 def get_calculation(calculation_id: int, session: Session = Depends(get_session)) -> Calculation:
     """Fetch one stored calculation by ID.
@@ -366,9 +368,7 @@ def get_calculation(calculation_id: int, session: Session = Depends(get_session)
         "Delete the stored calculation with the given `calculation_id`. "
         "Responds with an empty body on success."
     ),
-    responses={
-        404: {"description": "No calculation with this ID: detail is `Calculation not found`."}
-    },
+    responses=CALCULATION_NOT_FOUND_RESPONSES,
 )
 def delete_calculation(calculation_id: int, session: Session = Depends(get_session)) -> None:
     """Delete one stored calculation by ID, committing the removal to the database.
