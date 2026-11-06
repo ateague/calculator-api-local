@@ -14,6 +14,18 @@ dependencies = [
     "uvicorn~=0.54.0",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest~=9.2.0",
+    "pytest-cov~=7.1.0",
+    "coverage~=7.17.2",
+    "httpx~=0.28.1",
+]
+dev = [
+    "ruff~=0.17.4",
+    "pyright~=1.1.414",
+]
+
 [project.scripts]
 calculator-api = "server:main"
 
@@ -28,3 +40,12 @@ select = ["E", "F", "I", "W"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=core --cov=server --cov-branch --cov-report=term-missing --cov-fail-under=95"
+
+[tool.coverage.report]
+exclude_also = [
+    "if __name__ == .__main__.:",  # interpreter-owned script guard; main() is tested directly
+]
