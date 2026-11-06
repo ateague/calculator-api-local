@@ -85,3 +85,7 @@ curl -X DELETE http://localhost:8000/calculations/1
 FastAPI auto-generates docs at:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+
+## Changelog
+
+NOP
