@@ -115,7 +115,9 @@ serialized as naive UTC values for compatibility with existing data.
 
 ## Generated API documentation
 
-FastAPI exposes all generated documentation routes:
+Every endpoint is self-documented: each operation has a summary, description, documented
+error responses and described model fields, rendered in Swagger UI (`/docs`) and ReDoc
+(`/redoc`). FastAPI exposes all generated documentation routes:
 
 - OpenAPI schema: `http://localhost:8000/openapi.json`
 - Swagger UI: `http://localhost:8000/docs`
