@@ -43,6 +43,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
+".mcode/functional-tests/**" = ["D"]
 
 [tool.pyright]
 typeCheckingMode = "basic"

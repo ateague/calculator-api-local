@@ -39,9 +39,7 @@ def test_every_definition_in_source_has_docstring() -> None:
     for filename in ("core.py", "server.py"):
         tree = ast.parse((ROOT / filename).read_text())
         for node in ast.walk(tree):
-            if isinstance(
-                node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
-            ):
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
                 assert (ast.get_docstring(node) or "").strip(), f"{filename}:{node.name}"
 
 
@@ -76,6 +74,7 @@ def test_openapi_paths_and_status_codes_unchanged() -> None:
 
 def test_model_fields_are_described() -> None:
     schemas = server.app.openapi()["components"]["schemas"]
-    for name in ("CalculationCreate", "CalculationResponse", "CalculationRequest", "ResultResponse"):
+    names = ("CalculationCreate", "CalculationResponse", "CalculationRequest", "ResultResponse")
+    for name in names:
         for field, prop in schemas[name]["properties"].items():
             assert prop.get("description"), f"{name}.{field}"

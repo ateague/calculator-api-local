@@ -37,7 +37,7 @@ def get_session() -> Generator[Session, None, None]:
     Intended for use as a FastAPI dependency.
 
     Yields:
-    A SQLModel ``Session`` bound to ``engine``.
+        A SQLModel ``Session`` bound to ``engine``.
     """
     with Session(engine) as session:
         yield session
@@ -371,7 +371,9 @@ def get_calculation(calculation_id: int, session: Session = Depends(get_session)
     },
 )
 def delete_calculation(calculation_id: int, session: Session = Depends(get_session)) -> None:
-    """Delete one stored calculation by ID.
+    """Delete one stored calculation by ID, committing the removal to the database.
+
+    On success the response is HTTP 204 with an empty body.
 
     Args:
         calculation_id: Primary key of the calculation to delete.
@@ -380,10 +382,6 @@ def delete_calculation(calculation_id: int, session: Session = Depends(get_sessi
     Raises:
         HTTPException: With status 404 and detail ``"Calculation not found"`` if no row has
             the given ID.
-
-    Side effects:
-        Removes the row from the database and commits the transaction. The response is HTTP
-        204 with an empty body.
     """
     calculation = session.get(Calculation, calculation_id)
     if not calculation:
