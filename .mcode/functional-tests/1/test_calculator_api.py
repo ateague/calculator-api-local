@@ -16,7 +16,6 @@ from typing import Any
 import pytest
 import requests
 
-
 REPO = Path(__file__).resolve().parents[3]
 BASE_URL = os.environ.get("FT_BASE_URL", "http://127.0.0.1:18035")
 EVIDENCE_PATH = Path(__file__).with_name("observations.json")

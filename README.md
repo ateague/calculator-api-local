@@ -15,6 +15,25 @@ Install the service in editable mode from the repository root:
 python -m pip install -e .
 ```
 
+To also install the test and development tooling:
+
+```bash
+python -m pip install -e ".[test,dev]"
+```
+
+## Testing
+
+Run the test suite with `python -m pytest`. Pytest is configured to collect only from
+`tests`, measure `core.py` and `server.py` with branch coverage, report missing lines,
+and fail below 95% coverage. Each API test uses a fresh temporary SQLite database, so
+no `calculator.db` is created.
+
+Run the complete quality gate with:
+
+```bash
+ruff check . && pyright && python -m pytest
+```
+
 ## Configuration
 
 | Variable | Default | Description |
