@@ -12,7 +12,7 @@
       "a": 5.25,
       "b": -2
     },
-    "duration_ms": 4.304340109229088
+    "duration_ms": 4.22434788197279
   },
   {
     "name": "test_subtract",
@@ -27,7 +27,7 @@
       "a": -4,
       "b": 2.5
     },
-    "duration_ms": 4.200500436127186
+    "duration_ms": 3.596389666199684
   },
   {
     "name": "test_multiply",
@@ -42,7 +42,7 @@
       "a": -3,
       "b": 4.5
     },
-    "duration_ms": 3.708549775183201
+    "duration_ms": 2.8697988018393517
   },
   {
     "name": "test_divide",
@@ -57,7 +57,7 @@
       "a": 7.5,
       "b": 2.5
     },
-    "duration_ms": 5.124739371240139
+    "duration_ms": 2.4020597338676453
   },
   {
     "name": "test_divide_by_zero",
@@ -72,7 +72,7 @@
       "a": 1,
       "b": 0
     },
-    "duration_ms": 3.3234190195798874
+    "duration_ms": 4.9943383783102036
   },
   {
     "name": "test_missing_required_field",
@@ -86,7 +86,7 @@
     "request_body": {
       "a": 1
     },
-    "duration_ms": 3.0152006074786186
+    "duration_ms": 2.9916176572442055
   },
   {
     "name": "test_invalid_numeric_type",
@@ -101,11 +101,11 @@
       "a": "not-a-number",
       "b": 2
     },
-    "duration_ms": 2.840399742126465
+    "duration_ms": 2.7636587619781494
   },
   {
     "name": "test_persist_add",
-    "actual_output": "{\"operation\":\"add\",\"a\":2.0,\"b\":3.0,\"result\":5.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:35.923085\"}",
+    "actual_output": "{\"operation\":\"add\",\"a\":2.0,\"b\":3.0,\"result\":5.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:32.037190\"}",
     "actual_status": 201,
     "expected_status": 201,
     "category": "HAPPY_PATH",
@@ -117,11 +117,11 @@
       "a": 2,
       "b": 3
     },
-    "duration_ms": 14.792459085583687
+    "duration_ms": 12.977424077689648
   },
   {
     "name": "test_persist_sub",
-    "actual_output": "{\"operation\":\"sub\",\"a\":7.5,\"b\":2.5,\"result\":5.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:35.965193\"}",
+    "actual_output": "{\"operation\":\"sub\",\"a\":7.5,\"b\":2.5,\"result\":5.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:32.073487\"}",
     "actual_status": 201,
     "expected_status": 201,
     "category": "HAPPY_PATH",
@@ -133,11 +133,11 @@
       "a": 7.5,
       "b": 2.5
     },
-    "duration_ms": 12.447827495634556
+    "duration_ms": 13.87880276888609
   },
   {
     "name": "test_persist_mul",
-    "actual_output": "{\"operation\":\"mul\",\"a\":-4.0,\"b\":6.0,\"result\":-24.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.001907\"}",
+    "actual_output": "{\"operation\":\"mul\",\"a\":-4.0,\"b\":6.0,\"result\":-24.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:32.114841\"}",
     "actual_status": 201,
     "expected_status": 201,
     "category": "HAPPY_PATH",
@@ -149,11 +149,11 @@
       "a": -4,
       "b": 6
     },
-    "duration_ms": 16.644319519400597
+    "duration_ms": 14.539803378283978
   },
   {
     "name": "test_persist_div",
-    "actual_output": "{\"operation\":\"div\",\"a\":9.0,\"b\":4.5,\"result\":2.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.045609\"}",
+    "actual_output": "{\"operation\":\"div\",\"a\":9.0,\"b\":4.5,\"result\":2.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:32.152250\"}",
     "actual_status": 201,
     "expected_status": 201,
     "category": "HAPPY_PATH",
@@ -165,7 +165,7 @@
       "a": 9,
       "b": 4.5
     },
-    "duration_ms": 14.870969578623772
+    "duration_ms": 12.13921420276165
   },
   {
     "name": "test_unknown_operation",
@@ -181,7 +181,7 @@
       "a": 2,
       "b": 3
     },
-    "duration_ms": 4.530348815023899
+    "duration_ms": 4.334188066422939
   },
   {
     "name": "test_persisted_division_by_zero",
@@ -197,11 +197,11 @@
       "a": 2,
       "b": 0
     },
-    "duration_ms": 5.23016881197691
+    "duration_ms": 5.8326274156570435
   },
   {
     "name": "test_list_descending",
-    "actual_output": "[{\"operation\":\"add\",\"a\":2.0,\"b\":10.0,\"result\":12.0,\"id\":3,\"created_at\":\"2026-11-06T00:18:36.200147\"},{\"operation\":\"add\",\"a\":1.0,\"b\":10.0,\"result\":11.0,\"id\":2,\"created_at\":\"2026-11-06T00:18:36.162187\"},{\"operation\":\"add\",\"a\":0.0,\"b\":10.0,\"result\":10.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.121526\"}]",
+    "actual_output": "[{\"operation\":\"add\",\"a\":2.0,\"b\":10.0,\"result\":12.0,\"id\":3,\"created_at\":\"2026-11-06T15:22:32.291904\"},{\"operation\":\"add\",\"a\":1.0,\"b\":10.0,\"result\":11.0,\"id\":2,\"created_at\":\"2026-11-06T15:22:32.257717\"},{\"operation\":\"add\",\"a\":0.0,\"b\":10.0,\"result\":10.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:32.223989\"}]",
     "actual_status": 200,
     "expected_status": 200,
     "category": "HAPPY_PATH",
@@ -209,11 +209,11 @@
     "endpoint": "/calculations",
     "method": "GET",
     "request_body": null,
-    "duration_ms": 10.62575913965702
+    "duration_ms": 7.563686929643154
   },
   {
     "name": "test_get_existing",
-    "actual_output": "{\"operation\":\"mul\",\"a\":3.0,\"b\":7.0,\"result\":21.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.296466\"}",
+    "actual_output": "{\"operation\":\"mul\",\"a\":3.0,\"b\":7.0,\"result\":21.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:32.376860\"}",
     "actual_status": 200,
     "expected_status": 200,
     "category": "HAPPY_PATH",
@@ -221,7 +221,7 @@
     "endpoint": "/calculations/1",
     "method": "GET",
     "request_body": null,
-    "duration_ms": 7.013849914073944
+    "duration_ms": 6.180928088724613
   },
   {
     "name": "test_get_not_found",
@@ -233,7 +233,7 @@
     "endpoint": "/calculations/2147483647",
     "method": "GET",
     "request_body": null,
-    "duration_ms": 5.853529088199139
+    "duration_ms": 4.832647740840912
   },
   {
     "name": "test_delete_existing",
@@ -245,7 +245,7 @@
     "endpoint": "/calculations/1",
     "method": "DELETE",
     "request_body": null,
-    "duration_ms": 13.115947134792805
+    "duration_ms": 10.633875615894794
   },
   {
     "name": "test_delete_not_found",
@@ -257,7 +257,7 @@
     "endpoint": "/calculations/2147483647",
     "method": "DELETE",
     "request_body": null,
-    "duration_ms": 6.470920518040657
+    "duration_ms": 4.954608157277107
   },
   {
     "name": "test_python_server_default_port",
@@ -272,11 +272,11 @@
       "a": 11,
       "b": 4
     },
-    "duration_ms": 5.402009002864361
+    "duration_ms": 5.629378370940685
   },
   {
     "name": "test_installed_command_port_and_default_database",
-    "actual_output": "{\"operation\":\"mul\",\"a\":6.0,\"b\":7.0,\"result\":42.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:39.458569\"}",
+    "actual_output": "{\"operation\":\"mul\",\"a\":6.0,\"b\":7.0,\"result\":42.0,\"id\":1,\"created_at\":\"2026-11-06T15:22:35.609300\"}",
     "actual_status": 201,
     "expected_status": 201,
     "category": "HAPPY_PATH",
@@ -288,7 +288,7 @@
       "a": 6,
       "b": 7
     },
-    "duration_ms": 21.58298809081316
+    "duration_ms": 21.20974101126194
   },
   {
     "name": "test_repository_database_was_not_created",
@@ -303,6 +303,6 @@
       "a": 20,
       "b": 22
     },
-    "duration_ms": 5.233380012214184
+    "duration_ms": 3.5543497651815414
   }
 ]

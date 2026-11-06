@@ -57,7 +57,9 @@ def test_calc_errors():
 
 
 def test_list_descending():
-    ids = [post("/calculations", {"operation": "add", "a": i, "b": 1}).json()["id"] for i in range(3)]
+    ids = [
+        post("/calculations", {"operation": "add", "a": i, "b": 1}).json()["id"] for i in range(3)
+    ]
     lst = requests.get(BASE + "/calculations", timeout=T)
     assert lst.status_code == 200
     got = [c["id"] for c in lst.json() if c["id"] in ids]
@@ -71,7 +73,8 @@ def test_openapi():
     assert r.status_code == 200
     j = r.json()
     assert j["info"]["title"] == "Calculator API"
-    for p in ["/add", "/subtract", "/multiply", "/divide", "/calculations", "/calculations/{calculation_id}"]:
+    paths = ["/add", "/subtract", "/multiply", "/divide", "/calculations"]
+    for p in [*paths, "/calculations/{calculation_id}"]:
         assert p in j["paths"]
 
 
