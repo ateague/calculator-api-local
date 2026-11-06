@@ -1,0 +1,308 @@
+[
+  {
+    "name": "test_add",
+    "actual_output": "{\"result\":3.25}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "POST /add performs numeric addition",
+    "endpoint": "/add",
+    "method": "POST",
+    "request_body": {
+      "a": 5.25,
+      "b": -2
+    },
+    "duration_ms": 4.304340109229088
+  },
+  {
+    "name": "test_subtract",
+    "actual_output": "{\"result\":-6.5}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "POST /subtract computes a minus b",
+    "endpoint": "/subtract",
+    "method": "POST",
+    "request_body": {
+      "a": -4,
+      "b": 2.5
+    },
+    "duration_ms": 4.200500436127186
+  },
+  {
+    "name": "test_multiply",
+    "actual_output": "{\"result\":-13.5}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "POST /multiply performs numeric multiplication",
+    "endpoint": "/multiply",
+    "method": "POST",
+    "request_body": {
+      "a": -3,
+      "b": 4.5
+    },
+    "duration_ms": 3.708549775183201
+  },
+  {
+    "name": "test_divide",
+    "actual_output": "{\"result\":3.0}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "POST /divide performs numeric division",
+    "endpoint": "/divide",
+    "method": "POST",
+    "request_body": {
+      "a": 7.5,
+      "b": 2.5
+    },
+    "duration_ms": 5.124739371240139
+  },
+  {
+    "name": "test_divide_by_zero",
+    "actual_output": "{\"detail\":\"Cannot divide by zero\"}",
+    "actual_status": 400,
+    "expected_status": 400,
+    "category": "INVALID_INPUT",
+    "description": "POST /divide rejects division by zero with the domain error",
+    "endpoint": "/divide",
+    "method": "POST",
+    "request_body": {
+      "a": 1,
+      "b": 0
+    },
+    "duration_ms": 3.3234190195798874
+  },
+  {
+    "name": "test_missing_required_field",
+    "actual_output": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"b\"],\"msg\":\"Field required\",\"input\":{\"a\":1}}]}",
+    "actual_status": 422,
+    "expected_status": 422,
+    "category": "MISSING_REQUIRED",
+    "description": "Immediate calculation rejects a missing required field",
+    "endpoint": "/add",
+    "method": "POST",
+    "request_body": {
+      "a": 1
+    },
+    "duration_ms": 3.0152006074786186
+  },
+  {
+    "name": "test_invalid_numeric_type",
+    "actual_output": "{\"detail\":[{\"type\":\"float_parsing\",\"loc\":[\"body\",\"a\"],\"msg\":\"Input should be a valid number, unable to parse string as a number\",\"input\":\"not-a-number\"}]}",
+    "actual_status": 422,
+    "expected_status": 422,
+    "category": "INVALID_TYPE",
+    "description": "Immediate calculation rejects a nonnumeric operand",
+    "endpoint": "/multiply",
+    "method": "POST",
+    "request_body": {
+      "a": "not-a-number",
+      "b": 2
+    },
+    "duration_ms": 2.840399742126465
+  },
+  {
+    "name": "test_persist_add",
+    "actual_output": "{\"operation\":\"add\",\"a\":2.0,\"b\":3.0,\"result\":5.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:35.923085\"}",
+    "actual_status": 201,
+    "expected_status": 201,
+    "category": "HAPPY_PATH",
+    "description": "POST /calculations persists the add operation code",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "add",
+      "a": 2,
+      "b": 3
+    },
+    "duration_ms": 14.792459085583687
+  },
+  {
+    "name": "test_persist_sub",
+    "actual_output": "{\"operation\":\"sub\",\"a\":7.5,\"b\":2.5,\"result\":5.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:35.965193\"}",
+    "actual_status": 201,
+    "expected_status": 201,
+    "category": "HAPPY_PATH",
+    "description": "POST /calculations persists the sub operation code",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "sub",
+      "a": 7.5,
+      "b": 2.5
+    },
+    "duration_ms": 12.447827495634556
+  },
+  {
+    "name": "test_persist_mul",
+    "actual_output": "{\"operation\":\"mul\",\"a\":-4.0,\"b\":6.0,\"result\":-24.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.001907\"}",
+    "actual_status": 201,
+    "expected_status": 201,
+    "category": "HAPPY_PATH",
+    "description": "POST /calculations persists the mul operation code",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "mul",
+      "a": -4,
+      "b": 6
+    },
+    "duration_ms": 16.644319519400597
+  },
+  {
+    "name": "test_persist_div",
+    "actual_output": "{\"operation\":\"div\",\"a\":9.0,\"b\":4.5,\"result\":2.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.045609\"}",
+    "actual_status": 201,
+    "expected_status": 201,
+    "category": "HAPPY_PATH",
+    "description": "POST /calculations persists the div operation code",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "div",
+      "a": 9,
+      "b": 4.5
+    },
+    "duration_ms": 14.870969578623772
+  },
+  {
+    "name": "test_unknown_operation",
+    "actual_output": "{\"detail\":\"Unknown operation: pow. Use: ['add', 'sub', 'mul', 'div']\"}",
+    "actual_status": 400,
+    "expected_status": 400,
+    "category": "INVALID_INPUT",
+    "description": "POST /calculations rejects unknown operation codes",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "pow",
+      "a": 2,
+      "b": 3
+    },
+    "duration_ms": 4.530348815023899
+  },
+  {
+    "name": "test_persisted_division_by_zero",
+    "actual_output": "{\"detail\":\"Cannot divide by zero\"}",
+    "actual_status": 400,
+    "expected_status": 400,
+    "category": "INVALID_INPUT",
+    "description": "Persisted division rejects a zero divisor without storing a row",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "div",
+      "a": 2,
+      "b": 0
+    },
+    "duration_ms": 5.23016881197691
+  },
+  {
+    "name": "test_list_descending",
+    "actual_output": "[{\"operation\":\"add\",\"a\":2.0,\"b\":10.0,\"result\":12.0,\"id\":3,\"created_at\":\"2026-11-06T00:18:36.200147\"},{\"operation\":\"add\",\"a\":1.0,\"b\":10.0,\"result\":11.0,\"id\":2,\"created_at\":\"2026-11-06T00:18:36.162187\"},{\"operation\":\"add\",\"a\":0.0,\"b\":10.0,\"result\":10.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.121526\"}]",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "GET /calculations returns newest persisted records first",
+    "endpoint": "/calculations",
+    "method": "GET",
+    "request_body": null,
+    "duration_ms": 10.62575913965702
+  },
+  {
+    "name": "test_get_existing",
+    "actual_output": "{\"operation\":\"mul\",\"a\":3.0,\"b\":7.0,\"result\":21.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:36.296466\"}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "GET /calculations/{id} returns the matching persisted calculation",
+    "endpoint": "/calculations/1",
+    "method": "GET",
+    "request_body": null,
+    "duration_ms": 7.013849914073944
+  },
+  {
+    "name": "test_get_not_found",
+    "actual_output": "{\"detail\":\"Calculation not found\"}",
+    "actual_status": 404,
+    "expected_status": 404,
+    "category": "NOT_FOUND",
+    "description": "GET /calculations/{id} returns the specified 404 detail",
+    "endpoint": "/calculations/2147483647",
+    "method": "GET",
+    "request_body": null,
+    "duration_ms": 5.853529088199139
+  },
+  {
+    "name": "test_delete_existing",
+    "actual_output": "",
+    "actual_status": 204,
+    "expected_status": 204,
+    "category": "HAPPY_PATH",
+    "description": "DELETE /calculations/{id} removes a row and returns an empty body",
+    "endpoint": "/calculations/1",
+    "method": "DELETE",
+    "request_body": null,
+    "duration_ms": 13.115947134792805
+  },
+  {
+    "name": "test_delete_not_found",
+    "actual_output": "{\"detail\":\"Calculation not found\"}",
+    "actual_status": 404,
+    "expected_status": 404,
+    "category": "NOT_FOUND",
+    "description": "DELETE /calculations/{id} returns the specified 404 detail",
+    "endpoint": "/calculations/2147483647",
+    "method": "DELETE",
+    "request_body": null,
+    "duration_ms": 6.470920518040657
+  },
+  {
+    "name": "test_python_server_default_port",
+    "actual_output": "{\"result\":7.0}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "python server.py serves calculations on the default port 8000",
+    "endpoint": "/subtract",
+    "method": "POST",
+    "request_body": {
+      "a": 11,
+      "b": 4
+    },
+    "duration_ms": 5.402009002864361
+  },
+  {
+    "name": "test_installed_command_port_and_default_database",
+    "actual_output": "{\"operation\":\"mul\",\"a\":6.0,\"b\":7.0,\"result\":42.0,\"id\":1,\"created_at\":\"2026-11-06T00:18:39.458569\"}",
+    "actual_status": 201,
+    "expected_status": 201,
+    "category": "HAPPY_PATH",
+    "description": "calculator-api honors PORT and the sqlite:///calculator.db default",
+    "endpoint": "/calculations",
+    "method": "POST",
+    "request_body": {
+      "operation": "mul",
+      "a": 6,
+      "b": 7
+    },
+    "duration_ms": 21.58298809081316
+  },
+  {
+    "name": "test_repository_database_was_not_created",
+    "actual_output": "{\"result\":42.0}",
+    "actual_status": 200,
+    "expected_status": 200,
+    "category": "HAPPY_PATH",
+    "description": "Isolated DATABASE_URL leaves no repository-local calculator.db",
+    "endpoint": "/add",
+    "method": "POST",
+    "request_body": {
+      "a": 20,
+      "b": 22
+    },
+    "duration_ms": 5.233380012214184
+  }
+]
