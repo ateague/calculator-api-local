@@ -1,54 +1,63 @@
 # Calculator API
 
-A very simple REST API server that reuses functionality from `calculator-cli`.
+A FastAPI calculator service with immediate arithmetic endpoints and SQLite-backed
+calculation history.
 
-## Setup
+## Requirements
+
+- Python 3.12 or newer
+
+## Installation
+
+Install the service in editable mode from the repository root:
 
 ```bash
-pip install -e .
+python -m pip install -e .
 ```
 
-## Run
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `sqlite:///calculator.db` | SQLModel database URL used for calculation history |
+| `PORT` | `8000` | HTTP port used by Uvicorn |
+
+The server binds to `0.0.0.0`. The default SQLite database is created as
+`calculator.db` in the current working directory.
+
+## Running the service
+
+Run the module directly:
 
 ```bash
 python server.py
 ```
 
-Or after installing:
+Or use the installed console entry point:
 
 ```bash
 calculator-api
 ```
 
-The server runs on `http://localhost:8000`.
+With the default configuration, the API is available at `http://localhost:8000`.
+Importers can also use the exported ASGI application as `server.app`.
 
-## Endpoints
+## Immediate calculations
 
-### Calculator Operations
+Each endpoint accepts a JSON body containing numeric `a` and `b` fields and returns
+`{"result": <number>}`.
 
-All calculator endpoints accept POST with JSON body `{"a": <number>, "b": <number>}`.
+| Method | Endpoint | Behavior | Success status |
+|--------|----------|----------|----------------|
+| POST | `/add` | Add `a` and `b` | 200 |
+| POST | `/subtract` | Subtract `b` from `a` | 200 |
+| POST | `/multiply` | Multiply `a` and `b` | 200 |
+| POST | `/divide` | Divide `a` by `b` | 200 |
 
-| Endpoint | Description |
-|----------|-------------|
-| `/add` | Add two numbers |
-| `/subtract` | Subtract b from a |
-| `/multiply` | Multiply two numbers |
-| `/divide` | Divide a by b |
+Division by zero returns HTTP 400 with detail `Cannot divide by zero`. Missing or
+malformed request fields return FastAPI's HTTP 422 validation response.
 
-### Calculation History (CRUD)
-
-Store calculations in a SQLite database.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/calculations` | Create & store a calculation |
-| GET | `/calculations` | List all stored calculations |
-| GET | `/calculations/{id}` | Get a specific calculation |
-| DELETE | `/calculations/{id}` | Delete a calculation |
-
-## Examples
-
-**Quick calculation:**
+Example:
 
 ```bash
 curl -X POST http://localhost:8000/add \
@@ -56,9 +65,25 @@ curl -X POST http://localhost:8000/add \
   -d '{"a": 5, "b": 3}'
 ```
 
-Response: `{"result": 8.0}`
+## Calculation history
 
-**Save a calculation to the database:**
+Persisted calculations use exactly these operation codes:
+
+| Code | Operation |
+|------|-----------|
+| `add` | Addition |
+| `sub` | Subtraction |
+| `mul` | Multiplication |
+| `div` | Division |
+
+| Method | Endpoint | Success response | Error behavior |
+|--------|----------|------------------|----------------|
+| POST | `/calculations` | HTTP 201 with `operation`, `a`, `b`, `result`, `id`, and `created_at` | HTTP 400 for an unknown operation or division by zero; HTTP 422 for invalid input |
+| GET | `/calculations` | HTTP 200 list ordered by `created_at` descending | — |
+| GET | `/calculations/{calculation_id}` | HTTP 200 with the matching calculation | HTTP 404 with `Calculation not found` |
+| DELETE | `/calculations/{calculation_id}` | HTTP 204 with an empty body | HTTP 404 with `Calculation not found` |
+
+Create a stored calculation:
 
 ```bash
 curl -X POST http://localhost:8000/calculations \
@@ -66,25 +91,17 @@ curl -X POST http://localhost:8000/calculations \
   -d '{"operation": "mul", "a": 7, "b": 6}'
 ```
 
-Response: `{"operation": "mul", "a": 7.0, "b": 6.0, "result": 42.0, "id": 1, "created_at": "..."}`
+The SQLite schema is created when the application starts. Timestamps are stored and
+serialized as naive UTC values for compatibility with existing data.
 
-**List all saved calculations:**
+## Generated API documentation
 
-```bash
-curl http://localhost:8000/calculations
-```
+FastAPI exposes all generated documentation routes:
 
-**Delete a calculation:**
-
-```bash
-curl -X DELETE http://localhost:8000/calculations/1
-```
-
-## API Docs
-
-FastAPI auto-generates docs at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- OpenAPI schema: `http://localhost:8000/openapi.json`
+- Swagger UI: `http://localhost:8000/docs`
+- Swagger OAuth redirect: `http://localhost:8000/docs/oauth2-redirect`
+- ReDoc: `http://localhost:8000/redoc`
 
 ## Changelog
 
